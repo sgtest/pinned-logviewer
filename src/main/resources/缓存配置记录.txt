@@ -1,0 +1,33 @@
+
+
+=======1.spring 配置文件中添加：引入ehcache 2.8的包
+<cache:annotation-driven cache-manager ="cacheManager" />  
+	
+	 <bean id="cacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">  
+        <property name="cacheManager" ref="ehcache"></property>  
+    </bean>  
+
+    <bean id="ehcache" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">  
+        <property name="configLocation" value="classpath:ehcache-setting.xml"></property>  
+        <property name="shared" value="true"/>
+    </bean>  
+	<cache:annotation-driven key-generator="enhancedDefaultKeyGenerator" />
+	<bean id="enhancedDefaultKeyGenerator" class="com.rquest.riskmaster.util.CustomKeyGenerator" />
+	
+	二、写自定义缓存：
+	见util包下：CustomKeyGenerator
+	三、使用：
+		@Cacheable(value = "valuationAssumptionCache" ,keyGenerator="enhancedDefaultKeyGenerator")
+	注：使用注解缓存的类必须被spring管理，并且方法必须是pubic 非静态；
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
