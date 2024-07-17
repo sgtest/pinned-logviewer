@@ -1,0 +1,322 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.so</groupId>
+  <artifactId>myapp8-logviewer</artifactId>
+  <version>3.1.0</version>
+	<packaging>jar</packaging>
+
+	<properties>
+		<java.version>1.8</java.version>
+		<vaadin.version>8.16.0</vaadin.version>
+		<vaadin.plugin.version>8.16.0</vaadin.plugin.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>1.8</maven.compiler.source>
+		<maven.compiler.target>1.8</maven.compiler.target>
+		<vaadin.widgetset.mode>local</vaadin.widgetset.mode>
+	</properties>
+
+<!-- 	<parent> -->
+<!-- 		<groupId>org.springframework.boot</groupId> -->
+<!-- 		<artifactId>spring-boot-starter-parent</artifactId> -->
+<!-- 		<version>1.5.6.RELEASE</version> -->
+<!-- 		<relativePath /> -->
+<!-- 	</parent> -->
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.7.18</version>
+		<relativePath /> <!-- lookup parent from repository -->
+	</parent>
+	<repositories>
+		<repository>
+			<id>vaadin-addons</id>
+			<url>http://maven.vaadin.com/vaadin-addons</url>
+		</repository>
+		<repository>
+			<id>vaadin-snapshots</id>
+			<url>http://oss.sonatype.org/content/repositories/vaadin-snapshots/</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+		</repository>
+	</repositories>
+	
+		<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.vaadin</groupId>
+				<artifactId>vaadin-bom</artifactId>
+				<version>8.16.0</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>com.baomidou</groupId>
+			<artifactId>mybatis-plus-boot-starter</artifactId>
+			<version>3.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-tomcat</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.springframework.kafka/spring-kafka -->
+		<dependency>
+		    <groupId>org.springframework.kafka</groupId>
+		    <artifactId>spring-kafka</artifactId>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/org.slf4j/slf4j-log4j12 -->
+		<dependency>
+		    <groupId>org.slf4j</groupId>
+		    <artifactId>slf4j-log4j12</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-starter-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<!-- springboot和vaadin插件 -->
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-spring-boot-starter</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>
+						spring-boot-starter-validation
+					</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework.boot</groupId> -->
+<!-- 			<artifactId>spring-boot-starter-test</artifactId> -->
+<!-- 			<scope>test</scope> -->
+<!-- 		</dependency> -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-devtools</artifactId>
+			<optional>true</optional>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-themes</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-push</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-shared</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.vaadin</groupId>
+			<artifactId>vaadin-client</artifactId>
+		</dependency>
+		
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.vaadin</groupId> -->
+<!-- 			<artifactId>vaadin-client-compiled</artifactId> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>com.vaadin</groupId> -->
+<!-- 			<artifactId>vaadin-client-compiler</artifactId> -->
+<!-- 		</dependency> -->
+		
+		<!-- https://mvnrepository.com/artifact/com.vaadin/vaadin-charts -->
+		<dependency>
+		    <groupId>com.vaadin</groupId>
+		    <artifactId>vaadin-charts</artifactId>
+		    <version>4.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.vaadin.addons</groupId>
+			<artifactId>vaadin-combobox-multiselect</artifactId>
+			<version>2.6</version>
+		</dependency>
+	
+<!-- 	      <dependency> -->
+<!-- 	        <groupId>com.vaadin</groupId> -->
+<!-- 	        <artifactId>vaadin-spreadsheet</artifactId> -->
+<!-- 	        <version>2.1.0</version> -->
+<!-- 	    </dependency> -->
+<!-- 	   	<dependency> -->
+<!-- 	        <groupId>com.vaadin</groupId> -->
+<!-- 	        <artifactId>vaadin-board</artifactId> -->
+<!-- 	        <version>1.1.0</version> -->
+<!-- 	    </dependency> -->
+	    
+		<!-- javax.servlet -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+		</dependency>
+
+		<!-- 持久层需要的jar -->
+		<dependency> <!-- for ChainedTransactionManager configuration -->
+			<groupId>org.springframework.data</groupId>
+			<artifactId>spring-data-commons</artifactId>
+		</dependency>
+		<dependency> <!-- exclude掉缺省的jdbc配置 -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-jdbc</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.tomcat</groupId>
+					<artifactId>tomcat-jdbc</artifactId>
+				</exclusion>
+				<exclusion>
+					<artifactId>spring-boot-starter-logging</artifactId>
+					<groupId>org.springframework.boot</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency> <!-- 连接池 -->
+			<groupId>com.zaxxer</groupId>
+			<artifactId>HikariCP</artifactId>
+		</dependency>
+
+		<!-- spring-boot的二级缓存 -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context-support</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.jcraft</groupId>
+			<artifactId>jsch</artifactId>
+			<version>0.1.55</version>
+		</dependency>
+		
+		<!-- https://mvnrepository.com/artifact/com.github.mwiede/jsch -->
+<!-- 		<dependency> -->
+<!-- 		    <groupId>com.github.mwiede</groupId> -->
+<!-- 		    <artifactId>jsch</artifactId> -->
+<!-- 		    <version>0.2.16</version> -->
+<!-- 		</dependency> -->
+		
+		
+		<dependency>
+			<groupId>cn.hutool</groupId>
+			<artifactId>hutool-all</artifactId>
+			<version>5.8.7</version>
+		</dependency>
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.60</version>
+		</dependency>
+			<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>easyexcel</artifactId>
+			<version>2.2.6</version>
+		</dependency>
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/net.bytebuddy/byte-buddy -->
+		<dependency>
+		    <groupId>net.bytebuddy</groupId>
+		    <artifactId>byte-buddy</artifactId>
+		    <version>1.12.19</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.javamoney/moneta -->
+		<dependency>
+		    <groupId>org.javamoney</groupId>
+		    <artifactId>moneta</artifactId>
+		    <version>1.4.2</version>
+		    <type>pom</type>
+		</dependency>
+		
+		
+	</dependencies>
+
+	<build>
+		<finalName>myapp8-logviewer</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-maven-plugin</artifactId>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<configuration>
+					<webResources>
+						<resource>
+							<directory>src/main/webapp</directory>
+						</resource>
+					</webResources>
+				</configuration>
+			</plugin>
+			
+<!-- 			<plugin> -->
+<!-- 				<groupId>com.vaadin</groupId> -->
+<!-- 				<artifactId>vaadin-maven-plugin</artifactId> -->
+<!-- 				<version>8.16.0</version> -->
+<!-- 				<configuration> -->
+<!-- 					<webappDirectory>${basedir}/src/main/webapp/VAADIN/widgetsets -->
+<!-- 					</webappDirectory> -->
+<!-- 					<hostedWebapp>${basedir}/src/main/webapp/VAADIN/widgetsets -->
+<!-- 					</hostedWebapp> -->
+<!-- 					<noServer>true</noServer> -->
+<!-- 					<strict>true</strict> -->
+<!-- 				</configuration> -->
+<!-- 				<executions> -->
+<!-- 					<execution> -->
+<!-- 						<goals> -->
+<!-- 							<goal>clean</goal> -->
+<!-- 							<goal>resources</goal> -->
+<!-- 							<goal>update-theme</goal> -->
+<!-- 							<goal>update-widgetset</goal> -->
+<!-- 							<goal>compile-theme</goal> -->
+<!-- 							<goal>compile</goal> -->
+<!-- 						</goals> -->
+<!-- 					</execution> -->
+<!-- 				</executions> -->
+<!-- 			</plugin> -->
+			
+			
+		</plugins>
+		
+		  <resources>
+	        <resource>
+	            <directory>src/main/webapp</directory>
+	            <includes>
+	                <include>**/*.*</include>
+	            </includes>
+	        </resource>
+	        
+			  <resource>
+		        <directory>src/main/java</directory>
+		        <includes>
+		          <include>**/*.properties</include>
+		        </includes>
+		      </resource>
+		      <resource>
+		        <directory>src/main/resources</directory>
+		      </resource>
+	        
+	    </resources>
+	</build>
+
+</project>
