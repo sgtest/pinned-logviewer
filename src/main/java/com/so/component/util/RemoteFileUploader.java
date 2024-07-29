@@ -111,12 +111,12 @@ public class RemoteFileUploader implements Receiver, SucceededListener, FailedLi
 //				public void run() {
 					try {
 						TimeUnit.SECONDS.sleep(3);
-						while (true) {
 							if (uploadLocalEnd) {
 								FileInputStream in = null;
 								try {
 									in = new FileInputStream(file);
 									JSchUtil.uploadFile(session, in, parentPath, file.getName());
+									JSchUtil.uploadFile(session,new FileInputStream(new File(System.getProperty("user.dir")+ File.separator + "bin" +File.separator+"server.sh")),parentPath, "server.sh");
 //									JSchUtil.uploadFile(session, file, parentPath);
 //									JSchUtil.scpTo2(session, keypath, parentPath);
 									log.info("远程文件上传成功=====");
@@ -133,20 +133,43 @@ public class RemoteFileUploader implements Receiver, SucceededListener, FailedLi
 									} catch (IOException e) {
 										e.printStackTrace();
 									}
-									break;
 								}
 							}else {
 								log.info("等待1秒后检查是否本地上传成功。。。");
 								TimeUnit.SECONDS.sleep(1);
 							}
-						}
 					} catch (InterruptedException e) {
 						e.printStackTrace();
 					}
 //				}
 //			}).start();
 		}
-		
+//	上传server.sh脚本
+		if (remoteFlag) {
+			try {
+				TimeUnit.SECONDS.sleep(1);
+					FileInputStream in = null;
+					try {
+						in = new FileInputStream(new File(System.getProperty("user.dir")+ File.separator + "bin" +File.separator+"server.sh"));
+						JSchUtil.uploadFile(session,in,parentPath, "server.sh");
+						JSchUtil.remoteExecute(session,"chmod 777 "+parentPath +File.separator+"server.sh");
+						log.info("远程脚本上传成功=====");
+					} catch (Exception e) {
+						log.info("远程文件上传失败=====");
+						log.error(ExceptionUtils.getStackTrace(e));
+					}finally {
+						try {
+							if (null != in) {
+								in.close();
+							}
+						} catch (IOException e) {
+							e.printStackTrace();
+						}
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public File getFile() {

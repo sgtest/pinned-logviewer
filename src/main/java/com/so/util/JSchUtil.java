@@ -55,8 +55,8 @@ public class JSchUtil {
         try {
             channel = openExecChannel(session);
             channel.setCommand(command);
-            InputStream input = channel.getInputStream();
             channel.connect(CONNECT_TIMEOUT);
+            InputStream input = channel.getInputStream();
             try {
                 BufferedReader inputReader = new BufferedReader(new InputStreamReader(input));
                 String inputLine;
@@ -462,6 +462,10 @@ public class JSchUtil {
 
     public static ChannelExec openExecChannel(Session session) throws JSchException {
         return (ChannelExec) openChannel(session, "exec");
+    }
+
+    public static ChannelShell openShellChannel(Session session) throws JSchException {
+        return (ChannelShell) openChannel(session, "shell");
     }
 
     /**

@@ -16,6 +16,7 @@ Workflow 使用步骤：
 - 2.启动即可访问：ip:8080/
 - 3.启动命令 java -jarr xxx.jar使用spring-boot内嵌Tomcat启动
 - 4.默认登录admin/admin
+- 5.注意** 不兼容centos 6.x版本，开发环境是centos7.9
 
 
 配置

@@ -1,11 +1,13 @@
 package com.so.entity;
 
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 
 @TableName("projects")
 public class ProjectList {
 
 	private String idHost;
+	@TableId
 	private String idProject;
 	private String nameProject;
 	private String cdDescription;
@@ -79,6 +81,20 @@ public class ProjectList {
 	public void setIdHost(String idHost) {
 		this.idHost = idHost;
 	}
-	
-	
+
+	@Override
+	public String toString() {
+		return "ProjectList{" +
+				"idHost='" + idHost + '\'' +
+				", idProject='" + idProject + '\'' +
+				", nameProject='" + nameProject + '\'' +
+				", cdDescription='" + cdDescription + '\'' +
+				", cdTag='" + cdTag + '\'' +
+				", cdCommand='" + cdCommand + '\'' +
+				", jvmParam='" + jvmParam + '\'' +
+				", jarParam='" + jarParam + '\'' +
+				", cdParentPath='" + cdParentPath + '\'' +
+				", jarName='" + jarName + '\'' +
+				'}';
+	}
 }

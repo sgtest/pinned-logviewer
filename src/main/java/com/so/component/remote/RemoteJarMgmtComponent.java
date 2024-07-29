@@ -132,7 +132,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 							@Override
 							public void run() {
 								if (null != p.getJvmParam() && null != p.getJarParam()) {
-									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() + " " + p.getJarName() +  " " +p.getJarParam() +" 2>&1 > app.log &";
+									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() + " " + p.getNameProject() +  " " +p.getJarParam() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
@@ -141,7 +141,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 										e.printStackTrace();
 									}
 								}else if(StringUtils.isNotBlank(p.getJvmParam())){
-									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() +  " " +p.getJarName() +" 2>&1 > app.log &";
+									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() +  " " +p.getNameProject() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
@@ -151,7 +151,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 									}
 //									Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),cmd));
 								}else if (StringUtils.isNotBlank(p.getJarParam())) {
-									String cmd = "source /etc/profile;nohup java -jar "+ p.getJarName().trim() +" 2>&1 > app.log &";
+									String cmd = "source /etc/profile;nohup java -jar "+ p.getNameProject().trim() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
@@ -182,7 +182,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 							public void run() {
 								try {
 									//不加source /etc/profile就会报java找到不到命令
-									List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";sh server.sh start "+p.getJarName());
+									List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+
+											";chmod 777 server.sh;sh server.sh start "+p.getNameProject());
 									log.info(remoteExecute.toString());
 								} catch (JSchException e2) {
 									e2.printStackTrace();
@@ -209,13 +210,13 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 				try {
 					// Util.executeSellScript("sh server.sh stop " + p.getNameProject(), p.getCdParentPath());
 					try {
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";kill -9 `ps -ef | grep " + p.getJarName() + " | grep -v grep | awk '{print $2}'`");
+						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";kill -9 `ps -ef | grep " + p.getNameProject() + " | grep -v grep | awk '{print $2}'`");
 						log.info(remoteExecute.toString());
 					} catch (JSchException e1) {
 						e1.printStackTrace();
 					}
 //					Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),
-//							"kill -9 `ps -ef | grep " + p.getJarName() + " | grep -v grep | awk '{print $2}'`"));
+//							"kill -9 `ps -ef | grep " + p.getNameProject() + " | grep -v grep | awk '{print $2}'`"));
 				} catch (Exception e1) {
 					Notification.show("停止服务失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 					e1.printStackTrace();
@@ -229,11 +230,11 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			b.addClickListener(e -> {
 				try {
 					// boolean runningStasus = Util.getRunningStasus("sh server.sh status " + p.getNameProject(), p.getCdParentPath());
-					List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";ps -ef | grep java");
+					List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";ps -ef | grep java");
 //					List<String> executeNewFlow = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(), "ps -ef | grep java"));
 					boolean falg = false;
 					for (String res : executeNewFlow) {
-						if (res.contains(p.getJarName())) {
+						if (res.contains(p.getNameProject())) {
 							b.setStyleName("projectlist-status-running-button");
 							b.setCaption("运行中");
 							Notification.show("服务运行中", Notification.Type.WARNING_MESSAGE);

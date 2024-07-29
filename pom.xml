@@ -251,7 +251,7 @@
 	</dependencies>
 
 	<build>
-		<finalName>myapp8-logviewer</finalName>
+		<finalName>logviewer</finalName>
 		<plugins>
 			<plugin>
 				<groupId>org.springframework.boot</groupId>

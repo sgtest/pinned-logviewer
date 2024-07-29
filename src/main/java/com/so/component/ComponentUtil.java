@@ -1,5 +1,6 @@
 package com.so.component;
 
+import com.so.entity.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -216,5 +217,8 @@ public class ComponentUtil implements ApplicationContextAware {
 
 	public static String getCurrentUserName() {
 		return VaadinSession.getCurrent().getAttribute("userName").toString();
+	}
+    public static User getCurrentUser() {
+		return (User)VaadinSession.getCurrent().getAttribute("user");
 	}
 }

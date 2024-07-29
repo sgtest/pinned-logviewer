@@ -127,22 +127,22 @@ public class JarMgmtComponent extends CommonComponent {
 							public void run() {
 								// TODO Auto-generated method stub
 								if (null != p.getJvmParam() && null != p.getJarParam()) {
-									String cmd = "nohup java -jar "+p.getJvmParam().trim() + " " + p.getJarName() +  " " +p.getJarParam() +" 2>&1 > app.log &";
+									String cmd = "nohup java -jar "+p.getJvmParam().trim() + " " + p.getNameProject() +  " " +p.getJarParam() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),cmd));
 								}else if(StringUtils.isNotBlank(p.getJvmParam())){
-									String cmd = "nohup java -jar "+p.getJvmParam().trim() +  " " +p.getJarName() +" 2>&1 > app.log &";
+									String cmd = "nohup java -jar "+p.getJvmParam().trim() +  " " +p.getNameProject() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),cmd));
 								}else if (StringUtils.isNotBlank(p.getJarParam())) {
-									String cmd = "nohup java -jar "+ p.getJarName().trim() +" 2>&1 > app.log &";
+									String cmd = "nohup java -jar "+ p.getNameProject().trim() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),cmd));
 								}
 							}
 						}).start();
 					} else if (StrUtil.isNotBlank(p.getCdCommand())) {
-						log.info("使用配置命令启动jar包");
+						log.info("使用自定义的命令启动jar包");
 						new Thread(new Runnable() {
 							public void run() {
 								List<String> executeNewFlow = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),p.getCdCommand()));
@@ -153,7 +153,7 @@ public class JarMgmtComponent extends CommonComponent {
 						//命令和参数均未配置使用默认脚本启动
 						new Thread(new Runnable() {
 							public void run() {
-								List<String> lres = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),"sh server.sh start "+p.getJarName()));
+								List<String> lres = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),"chmod 777 server.sh;sh server.sh start "+p.getNameProject()));
 								log.info(lres.toString());
 							}
 						}).start();
@@ -162,7 +162,7 @@ public class JarMgmtComponent extends CommonComponent {
 					e1.printStackTrace();
 					Notification.show("启动命令执行失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 				}
-				Notification.show("命令已经执行，请注意查看日志", Notification.Type.WARNING_MESSAGE);
+				Notification.show("命令已经执行，请到日志搜索界面搜索并查看日志", Notification.Type.WARNING_MESSAGE);
 				// 获取已经选择的行
 				// Set<User> selectedItems = grid.getSelectedItems();
 				// selectedItems.forEach(u -> System.out.println(u.getUserId()));
@@ -177,7 +177,7 @@ public class JarMgmtComponent extends CommonComponent {
 				try {
 					// Util.executeSellScript("sh server.sh stop " + p.getNameProject(), p.getCdParentPath());
 					Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),
-							"kill -9 `ps -ef | grep " + p.getJarName() + " | grep -v grep | awk '{print $2}'`"));
+							"kill -9 `ps -ef | grep " + p.getNameProject() + " | grep -v grep | awk '{print $2}'`"));
 				} catch (Exception e1) {
 					Notification.show("停止服务失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 					e1.printStackTrace();
@@ -194,7 +194,7 @@ public class JarMgmtComponent extends CommonComponent {
 					List<String> executeNewFlow = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(), "ps -ef | grep java"));
 					boolean falg = false;
 					for (String res : executeNewFlow) {
-						if (res.contains(p.getJarName())) {
+						if (res.contains(p.getNameProject())) {
 							b.setStyleName("projectlist-status-running-button");
 							b.setCaption("运行中");
 							Notification.show("服务运行中", Notification.Type.WARNING_MESSAGE);
@@ -257,6 +257,7 @@ public class JarMgmtComponent extends CommonComponent {
 						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 						return;
 					}
+					log.info(p.toString());
 					popWindowAddProject(false, p.getIdProject());
 				} catch (Exception e1) {
 					Notification.show("系统繁忙", Notification.Type.WARNING_MESSAGE);
