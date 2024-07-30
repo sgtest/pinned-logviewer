@@ -266,6 +266,7 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 	private void saveOrUpdateProject(boolean update) {
 
 		TomcatInfoEntity pro = new TomcatInfoEntity();
+		pro.setIdHost(addr.getIdHost());
 		if (idProjectField.getValue() == null || tomcatPath.getValue() == null) {
 			Notification.show("项目ID、项目所在路径不能为空！", Notification.Type.WARNING_MESSAGE);
 			return;

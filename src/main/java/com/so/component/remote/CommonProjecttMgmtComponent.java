@@ -394,7 +394,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		}
 
 		win = new Window("添加项目");
-		win.setHeight("535px");
+		win.setHeight("600px");
 		win.setWidth("600px");
 		win.setModal(true);
 
