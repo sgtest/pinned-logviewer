@@ -36,10 +36,10 @@ Workflow 使用步骤：
 ### 截图
 
 <img width="800px" height="300px" alt="login" src="images/localsearch.png"/> 
-<img width="800px" height="400px" alt="login" src="images/local.png"/> 
+<img width="600px" height="400px" alt="login" src="images/local.png"/> 
 <img width="800px" height="400px" alt="login" src="images/loginserver.png"/> 
-<img width="800px" height="400px" alt="login" src="images/serverlist.png"/> 
-<img width="800px" height="450px" alt="login" src="images/application.png"/> 
+<img width="600px" height="400px" alt="login" src="images/serverlist.png"/> 
+<img width="700px" height="500px" alt="login" src="images/application.png"/> 
 
 - 我的博客地址：https://blog.csdn.net/sl4379
 
