@@ -52,7 +52,6 @@ CREATE TABLE "connection_info" (
 -- Records of connection_info
 -- ----------------------------
 INSERT INTO "connection_info" VALUES ('192.168.190.100', '22', 'root', 'test', NULL, NULL);
-INSERT INTO "connection_info" VALUES ('192.168.190.102', '22', 'root', 'test', NULL, NULL);
 
 -- ----------------------------
 -- Table structure for log_path
@@ -70,13 +69,13 @@ CREATE TABLE "projects" (
                             "id_host" TEXT(32) NOT NULL,
                             "id_project" TEXT(64) NOT NULL,
                             "name_project" TEXT(32),
-                            "cd_parent_path" TEXT(64) NOT NULL,
+                            "cd_parent_path" TEXT(128) NOT NULL,
                             "cd_tag" TEXT(32),
-                            "cd_command" TEXT(64),
-                            "jvm_param" TEXT(64),
+                            "cd_command" TEXT(128),
+                            "jvm_param" TEXT(128),
                             "jar_param" TEXT(64),
                             "jar_name" TEXT(128),
-                            "cd_description" TEXT(64),
+                            "cd_description" TEXT(128),
                             PRIMARY KEY ("id_host", "id_project")
 );
 

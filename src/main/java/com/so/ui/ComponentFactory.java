@@ -541,6 +541,7 @@ public class ComponentFactory {
 
 	public static ComboBoxMultiselect getComboxMultiselect(String caption){
 		ComboBoxMultiselect multi = new ComboBoxMultiselect(caption);
+		multi.addStyleName("field_box_standard_height");
 		return multi;
 	}
 	public static  RadioButtonGroup<String> getStandardRadioButtonGroup(List<String> items) {
