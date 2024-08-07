@@ -34,10 +34,12 @@ Workflow 使用步骤：
 - 2.使用压缩软件打开直接修改后保存，简单方便；
 
 ### 截图
-- ![localsearch.png](images%2Flocalsearch.png)
-- ![local.png](images%2Flocal.png)
-- ![loginserver.png](images%2Floginserver.png)
-- ![serverlist.png](images%2Fserverlist.png)
-- ![application.png](images%2Fapplication.png)
+
+<img width="800px" height="300px" alt="login" src="images/localsearch.png"/> 
+<img width="800px" height="400px" alt="login" src="images/local.png"/> 
+<img width="800px" height="400px" alt="login" src="images/loginserver.png"/> 
+<img width="800px" height="400px" alt="login" src="images/serverlist.png"/> 
+<img width="800px" height="450px" alt="login" src="images/application.png"/> 
+
 - 我的博客地址：https://blog.csdn.net/sl4379
 
