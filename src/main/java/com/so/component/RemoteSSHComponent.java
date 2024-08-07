@@ -136,7 +136,8 @@ public class RemoteSSHComponent extends CommonComponent {
 				// 连接通道
 				channelShell.connect();
 			} catch (JSchException e) {
-				throw new RuntimeException(e);
+				Notification.show("链接失败！请确认该机器是否能正常访问", Notification.Type.WARNING_MESSAGE);
+				log.error(e.getMessage());
 			}
 		}
 

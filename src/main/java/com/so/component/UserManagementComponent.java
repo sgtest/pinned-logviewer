@@ -8,8 +8,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import cn.hutool.core.util.StrUtil;
 import com.so.ui.LoginView;
 import com.vaadin.data.provider.ListDataProvider;
+import com.vaadin.server.VaadinSession;
 import com.vaadin.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -232,12 +234,23 @@ public class UserManagementComponent extends CommonComponent {
 			ComboBoxMultiselect permission = ComponentFactory.getComboxMultiselect("权限");
 			permission.setItems("add","delete","update","query","all");
 			if (!add) {
+				User currentSelectedUser = null;
 				Set<User> selectedItems = userGrid.getSelectedItems();
 				for (User user : selectedItems) {
+					currentSelectedUser = user;
 					usernameField.setValue(user.getUserId());
 					usernameField.setEnabled(false);
 					break;
 				}
+				User user = userDao.selectById(currentSelectedUser.getUserId());
+				if (StrUtil.isNotEmpty(user.getPermission())){
+					String[] split = user.getPermission().split(",");
+					for (int i = 0; i < split.length; i++) {
+						permission.select(split[i]);
+					}
+				}
+			}else{
+				permission.select("query");
 			}
 			lay.addComponent(usernameField);
 			lay.addComponent(passField);
@@ -247,40 +260,46 @@ public class UserManagementComponent extends CommonComponent {
 			abs.addComponent(btnLayout,"bottom:50px;right:20px;");
 			Button confirmBtn = ComponentFactory.getStandardButton("确定");
 			confirmBtn.addClickListener(e ->{
-				if (null != usernameField.getValue() && !"".equals(usernameField.getValue()) &&
-						null != passField.getValue() && !"".equals(passField.getValue())) {
-					User u = new User();
-					u.setUserId(usernameField.getValue());
-					u.setPassword(Util.getSm3DigestStr(passField.getValue()));
+				if (!add) {
+					User user = userDao.selectById(usernameField.getValue());
+					if (StrUtil.isNotEmpty(passField.getValue())){
+						user.setPassword(Util.getSm3DigestStr(passField.getValue()));
+					}
 					Set<Object> value = permission.getValue();
 					if (null != value){
 						StringBuffer buf = new StringBuffer();
 						value.stream().forEach(e1 -> buf.append(e1.toString()+","));
-						u.setPermission(buf.toString());
+						user.setPermission(buf.toString());
 					}else{
-						u.setPermission("query");
+						user.setPermission("query");
 					}
-					if(add){
-						userDao.insert(u);
-					}else{
-						userDao.updateById(u);
-					}
-
-					//将原来存在的相同用户名的记录删除
-//					 List<String> allUser = Util.getUsersAsLine();
-//					 ListIterator<String> listIterator = allUser.listIterator();
-//					 while (listIterator.hasNext()) {
-//						 String id =  listIterator.next();
-//							if (id.contains("=") && id.split("=")[0].equals(usernameField.getValue())) {
-//								listIterator.remove();
-//							}
-//					}
-//					allUser.add(usernameField.getValue()+"="+Util.getSm3DigestStr(passField.getValue()));
-//					Util.saveUsers(allUser);
+					userDao.updateById(user);
 					this.close();
 				}else {
-					Notification.show("用户名或密码输入有误", Notification.Type.WARNING_MESSAGE);
-					return;
+					if (null != usernameField.getValue() && !"".equals(usernameField.getValue()) &&
+							null != passField.getValue() && !"".equals(passField.getValue())) {
+						User user = userDao.selectById(usernameField.getValue());
+						if (null != user) {
+							Notification.show("用户已经存在,请更换用户名尝试!", Notification.Type.WARNING_MESSAGE);
+							return;
+						}
+						User u = new User();
+						u.setUserId(usernameField.getValue());
+						u.setPassword(Util.getSm3DigestStr(passField.getValue()));
+						Set<Object> value = permission.getValue();
+						if (null != value) {
+							StringBuffer buf = new StringBuffer();
+							value.stream().forEach(e1 -> buf.append(e1.toString() + ","));
+							u.setPermission(buf.toString());
+						} else {
+							u.setPermission("query");
+						}
+						userDao.insert(u);
+						this.close();
+					} else {
+						Notification.show("用户名或密码输入有误", Notification.Type.WARNING_MESSAGE);
+						return;
+					}
 				}
 				initContentTable();
 			});

@@ -57,12 +57,19 @@ public class JSchUtil {
             channel.setCommand(command);
             channel.connect(CONNECT_TIMEOUT);
             InputStream input = channel.getInputStream();
+            InputStream errStream = channel.getErrStream();
             try {
                 BufferedReader inputReader = new BufferedReader(new InputStreamReader(input));
                 String inputLine;
                 while ((inputLine = inputReader.readLine()) != null) {
                     log.info("   {}", inputLine);
                     resultLines.add(inputLine);
+                }
+                BufferedReader errorReader = new BufferedReader(new InputStreamReader(errStream));
+                String inputLine2;
+                while ((inputLine2 = errorReader.readLine()) != null) {
+                    log.info("错误信息：   {}", inputLine2);
+                    resultLines.add(inputLine2);
                 }
             } finally {
                 if (input != null) {

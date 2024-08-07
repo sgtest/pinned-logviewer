@@ -7,6 +7,7 @@ import java.util.Map;
 import com.so.ui.LoginView;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +53,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 	private ProjectsMapper projectsMapper;
 	private TextField pathField;
 	private TextField classField;
-	private TextField startField;
+	private TextArea startField;
 	private TextArea jvmParam;
 	private TextField jarParam;
 	private TextField idProjectField;
@@ -121,7 +122,6 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			Button b = ComponentFactory.getStandardButton("启动");
 			b.addStyleName("");
 			b.addClickListener(e -> {
-				try {
 					//在启动前检查当前jar包路径下是否有脚本server.sh,没有就生成一个
 //					checkAddShell(p);
 					if (StringUtils.isNotBlank(p.getJvmParam()) || StringUtils.isNotBlank(p.getJarParam())) {
@@ -138,7 +138,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
-										e.printStackTrace();
+										log.error(ExceptionUtils.getStackTrace(e));
+										Notification.show("启动失败，请前往查看日志信息",Notification.Type.ERROR_MESSAGE);
 									}
 								}else if(StringUtils.isNotBlank(p.getJvmParam())){
 									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() +  " " +p.getNameProject() +" 2>&1 > app.log &";
@@ -147,7 +148,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
-										e.printStackTrace();
+										log.error(ExceptionUtils.getStackTrace(e));
+										Notification.show("启动失败，请前往查看日志信息",Notification.Type.ERROR_MESSAGE);
 									}
 //									Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),cmd));
 								}else if (StringUtils.isNotBlank(p.getJarParam())) {
@@ -157,7 +159,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
-										e.printStackTrace();
+										log.error(ExceptionUtils.getStackTrace(e));
+										Notification.show("启动失败，请前往查看日志信息",Notification.Type.ERROR_MESSAGE);
 									}
 								}
 							}
@@ -169,14 +172,16 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 							public void run() {
 								try {
 									List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";"+p.getCdCommand());
-									log.info(remoteExecute.toString());
+//									log.info(remoteExecute.toString());
 								} catch (JSchException e) {
-									e.printStackTrace();
+									log.error(ExceptionUtils.getStackTrace(e));
+									Notification.show("启动失败，请前往查看日志信息",Notification.Type.ERROR_MESSAGE);
 								}
 							}
 						}).start();
 					} else {
 						//命令和参数均未配置使用默认脚本启动
+						log.info("用户未配置命令和参数，使用默认脚本启动jar包");
 						new Thread(new Runnable() {
 							@Override
 							public void run() {
@@ -186,15 +191,12 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 											";chmod 777 server.sh;sh server.sh start "+p.getNameProject());
 									log.info(remoteExecute.toString());
 								} catch (JSchException e2) {
-									e2.printStackTrace();
+									log.error(ExceptionUtils.getStackTrace(e2));
+									Notification.show("启动失败，请前往查看日志信息",Notification.Type.ERROR_MESSAGE);
 								}
 							}
 						}).start();
 					}
-				} catch (Exception e1) {
-					e1.printStackTrace();
-					Notification.show("启动命令执行失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
-				}
 				Notification.show("命令已经执行，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 				// 获取已经选择的行
 				// Set<User> selectedItems = grid.getSelectedItems();
@@ -357,6 +359,14 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		pro.setNameProject(nameProjectField.getValue());
 		pro.setCdParentPath(pathField.getValue());
 		pro.setCdTag(classField.getValue());
+		if (StrUtil.isNotEmpty(startField.getValue()) && !startField.getValue().startsWith("nohup")){
+			Notification.show("为避免将被启动的jar包的全部日志都打印到本地，建议增加nohup在后台启动！", Notification.Type.WARNING_MESSAGE);
+			return;
+		}
+		if (!startField.getValue().endsWith("&")){
+			Notification.show("为避免将被启动的jar包的全部日志都打印到本地，建议在后台启动增加&！", Notification.Type.WARNING_MESSAGE);
+			return;
+		}
 		pro.setCdCommand(startField.getValue());
 		pro.setJvmParam(jvmParam.getValue());
 		pro.setJarParam(jarParam.getValue());
@@ -392,22 +402,27 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		lay.setWidth("95%");
 		lay.addStyleName("project-addproject-window");
 		idProjectField = ComponentFactory.getStandardTtextField("项目ID");
+		idProjectField.setRequiredIndicatorVisible(true);
 		idProjectField.setWidth("90%");
 		nameProjectField = ComponentFactory.getStandardTtextField("项目名称");
 		nameProjectField.setWidth("90%");
+		nameProjectField.setRequiredIndicatorVisible(true);
 		nameProjectField.setPlaceholder("输入jar、war包名称：xxx.jar");
 		pathField = ComponentFactory.getStandardTtextField("项目所在路径");
 		pathField.setWidth("90%");
+		pathField.setRequiredIndicatorVisible(true);
 		pathField.setPlaceholder("注：不包含jar包名称");
 		classField = ComponentFactory.getStandardTtextField("项目tag");
 		classField.setWidth("90%");
 		classField.setPlaceholder("tag用于对项目进行分类");
-		startField = ComponentFactory.getStandardTtextField("启动命令");
+		startField = ComponentFactory.getTextArea("启动命令");
+		startField.setHeight("100px");
 		startField.setWidth("90%");
-		startField.setPlaceholder("请输入启动命令，可以为空");
+		startField.setPlaceholder("输入启动命令，可以为空");
 		jvmParam = ComponentFactory.getTextArea("JVM参数");
 		jvmParam.setHeight("100px");
 		jvmParam.setWidth("90%");
+		jvmParam.setPlaceholder("输入JVM参数，可以为空");
 		jarParam = ComponentFactory.getStandardTtextField("jar包参数");
 		jarParam.setWidth("90%");
 		descField = ComponentFactory.getStandardTtextField("项目描述");
@@ -446,8 +461,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		}
 
 		win = new Window("添加项目");
-		win.setHeight("600px");
-		win.setWidth("600px");
+		win.setHeight("650px");
+		win.setWidth("800px");
 		win.setModal(true);
 
 		win.setContent(lay);

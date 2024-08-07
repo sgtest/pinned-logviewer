@@ -144,6 +144,7 @@ public class JarMgmtComponent extends CommonComponent {
 					} else if (StrUtil.isNotBlank(p.getCdCommand())) {
 						log.info("使用自定义的命令启动jar包");
 						new Thread(new Runnable() {
+							@Override
 							public void run() {
 								List<String> executeNewFlow = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),p.getCdCommand()));
 								log.info(executeNewFlow.toString());
@@ -152,6 +153,7 @@ public class JarMgmtComponent extends CommonComponent {
 					} else {
 						//命令和参数均未配置使用默认脚本启动
 						new Thread(new Runnable() {
+							@Override
 							public void run() {
 								List<String> lres = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(),"chmod 777 server.sh;sh server.sh start "+p.getNameProject()));
 								log.info(lres.toString());
