@@ -2,6 +2,7 @@ package com.so;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IoUtil;
+import cn.hutool.core.net.NetUtil;
 import cn.hutool.system.SystemUtil;
 import com.so.util.Util;
 import org.mybatis.spring.annotation.MapperScan;
@@ -20,14 +21,17 @@ import org.springframework.core.io.ClassPathResource;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
 
-@EnableAutoConfiguration(exclude = { DataSourceTransactionManagerAutoConfiguration.class,
-        DataSourceAutoConfiguration.class, HazelcastAutoConfiguration.class})
-@SpringBootApplication()
+@SpringBootApplication(exclude = { DataSourceTransactionManagerAutoConfiguration.class,
+		DataSourceAutoConfiguration.class, HazelcastAutoConfiguration.class})
 @MapperScan("com.so.mapper")
 public class Application1 extends org.springframework.boot.web.servlet.support.SpringBootServletInitializer{
 	
@@ -37,8 +41,29 @@ public class Application1 extends org.springframework.boot.web.servlet.support.S
 		SpringApplication app = new SpringApplication(Application1.class); 
         ConfigurableApplicationContext ctx = app.run(args);
 		logger.info("the application start success!!!");
+		String port = ctx.getEnvironment().getProperty("server.port");
+		String path = ctx.getEnvironment().getProperty("server.servlet.context-path");
+		System.out.println("====================address============================");
+		for (NetworkInterface networkInterface : NetUtil.getNetworkInterfaces()) {
+			try {
+				if (networkInterface.isUp()){
+					Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+					while (inetAddresses.hasMoreElements()){
+						InetAddress inetAddress = inetAddresses.nextElement();
+						if (!inetAddress.isSiteLocalAddress()){
+							continue;
+						}
+						System.out.println(inetAddress.getHostAddress()+":"+port+path);
+					}
+				}
+			} catch (SocketException e) {
+				throw new RuntimeException(e);
+			}
+		}
 		try {
-			mkdirBin();
+			if (SystemUtil.getOsInfo().isLinux()){
+				mkdirBin();
+			}
 		} catch (IOException e) {
 			logger.error("生成server.sh脚本错误{}",e.getMessage());
 			throw new RuntimeException(e);
