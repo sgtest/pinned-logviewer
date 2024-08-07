@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Vector;
 
 import com.so.component.CommonComponent;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -570,16 +571,23 @@ public class RemoteLoginComponent extends CommonComponent {
 						Notification.show("请打开新的tab连接另一个服务器", Notification.Type.WARNING_MESSAGE);
 						return;
 					}
-					if (null != loader.getFile()) {
-						//上传了秘钥
-						log.info("使用秘钥连接");
-						session = JschUtil.createSession(hostName, sshPort, userName, loader.getKeypath(), password == null ? null :password.getBytes());
-						channel = JschUtil.openSftp(session, 1800);
-					}else {
-						session = JschUtil.createSession(hostName, sshPort, userName, password);
-						channel = JschUtil.openSftp(session, 1800);
+					try {
+						if (null != loader.getFile()) {
+							//上传了秘钥
+							log.info("使用秘钥连接");
+							session = JschUtil.createSession(hostName, sshPort, userName, loader.getKeypath(), password == null ? null :password.getBytes());
+							channel = JschUtil.openSftp(session, 1800);
+						}else {
+							session = JschUtil.createSession(hostName, sshPort, userName, password);
+							channel = JschUtil.openSftp(session, 1800);
+						}
+					} catch (Exception ex) {
+						log.error(ExceptionUtils.getStackTrace(ex));
+						ex.printStackTrace();
+						this.close();
+						Notification.show("链接创建失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 					}
-					
+
 					// 如果连接成功保存用户的配置
 //					1saveUserConfig(host.getValue(), Integer.valueOf(port.getValue()), usernameField.getValue(), passField.getValue());
 					try {
