@@ -29,10 +29,12 @@ CREATE TABLE "common_project_mgmt" (
                                        "cmd_restart" TEXT,
                                        "cmd_refresh" TEXT,
                                        "cmd_status" TEXT,
+                                       "cmd_status_success_key" TEXT,
                                        "cd_description" TEXT,
                                        "cd_tag" TEXT,
                                        PRIMARY KEY ("id_host", "id_project")
 );
+INSERT INTO "common_project_mgmt" ("id_host", "id_project", "name_project", "cd_path", "cmd_start", "cmd_stop", "cmd_restart", "cmd_refresh", "cmd_status", "cmd_status_success_key", "cd_description", "cd_tag") VALUES ('192.168.190.160', 'nginx', 'nginx', '/usr/local/nginx/sbin', './nginx ', './nginx -s stop', '', './nginx -s reload', 'ps -ef | grep nginx', 'nginx: master', 'nginx配置示例', '');
 
 -- ----------------------------
 -- Table structure for connection_info
