@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Spliterator;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.vaadin.shared.ui.ContentMode;
+import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -32,19 +34,8 @@ import com.so.mapper.CommonProjectMgmtMapper;
 import com.so.mapper.ProjectsMapper;
 import com.so.mapper.TomcatInfoMapper;
 import com.vaadin.server.Extension;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.Column;
-import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -81,14 +72,15 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 	private TextField cmdReStart;
 	private TextField cmdRefresh;
 	private TextField cmdStatus;
+	private TextField cmdStatusKey;
 
 	@Override
 	public void initLayout() {
 		mainPanel = new Panel();
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
+		contentLayout.setWidth("100%");
 		contentLayout.setHeight("700px");
-		contentLayout.setHeightFull();
 		mainPanel.setContent(contentLayout);
 		initMainLayout();
 	}
@@ -117,12 +109,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 						log.info("脚本启动路径："+p.getCdPath());
 						List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd " + p.getCdPath()+";"+p.getCmdStart());
 						log.info(executeNewFlow.toString());
-						if (executeNewFlow.toString().contains("started")) {
-							Notification.show("启动成功",Type.WARNING_MESSAGE);
-						}else {
-							Notification.show("启动失败",Type.ERROR_MESSAGE);
-						}
-					} 
+					}
 				} catch (Exception e1) {
 					e1.printStackTrace();
 					log.error(ExceptionUtils.getStackTrace(e1));
@@ -158,6 +145,9 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 						log.info("应用重启路径："+p.getCdPath());
 						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRestart());
 						log.info(remoteExecute.toString());
+					}else{
+						Notification.show("未配置重启命令，无法执行！", Notification.Type.WARNING_MESSAGE);
+						return;
 					}
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -175,6 +165,9 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 					if (StrUtil.isNotBlank(p.getCdPath())) {
 						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRefresh());
 						log.info(remoteExecute.toString());
+					}else{
+						Notification.show("未配置刷新命令，无法执行！", Notification.Type.WARNING_MESSAGE);
+						return;
 					}
 				} catch (Exception e1) {
 					e1.printStackTrace();
@@ -190,26 +183,30 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			b.addClickListener(e -> {
 				try {
 					// boolean runningStasus = Util.getRunningStasus("sh server.sh status " + p.getNameProject(), p.getCdParentPath());
-					List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,p.getCmdStatus());
-					boolean falg = false;
-					String binPath = StrUtil.removeSuffix(p.getCdPath(), "/");
-					for (String res : executeNewFlow) {
-						if (res.contains(binPath)) {
-							b.setStyleName("projectlist-status-running-button");
-							b.setCaption("运行中");
-							Notification.show("服务运行中", Notification.Type.WARNING_MESSAGE);
-							falg = true;
-							break;
-						} 
-						log.info(res);
+					if (StrUtil.isNotEmpty(p.getCmdStatus())){
+						List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,p.getCmdStatus());
+						boolean falg = false;
+						for (String res : executeNewFlow) {
+							if (res.contains(p.getCmdStatusSuccessKey())) {
+								b.setStyleName("projectlist-status-running-button");
+								b.setCaption("运行中");
+								Notification.show("服务运行中", Notification.Type.WARNING_MESSAGE);
+								falg = true;
+								break;
+							}
+							log.info(res);
+						}
+						if (!falg) {
+							b.setStyleName("projectlist-status-stop-button");
+							b.setCaption("已停止");
+							Notification.show("服务已经停止，请注意查看日志或点击状态按钮查看", Notification.Type.WARNING_MESSAGE);
+						}
+					}else{
+						Notification.show("未配置查看状态命令，无法执行！", Notification.Type.WARNING_MESSAGE);
 					}
-					if (!falg) {
-						b.setStyleName("projectlist-status-stop-button");
-						b.setCaption("已停止");
-						Notification.show("服务已经停止，请注意查看日志或点击状态按钮查看", Notification.Type.WARNING_MESSAGE);
-					}
+
 				} catch (Exception e1) {
-					Notification.show("停止服务失败，请注意查看日志或点击状态按钮查看", Notification.Type.WARNING_MESSAGE);
+					Notification.show("执行命令失败，请注意查看日志或点击状态按钮查看", Notification.Type.WARNING_MESSAGE);
 					e1.printStackTrace();
 					log.error(ExceptionUtils.getStackTrace(e1));
 				}
@@ -262,8 +259,8 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		}).setCaption("修改");
 		grid.addComponentColumn(p -> {
 			loader = new FileUploader();
-			String tomPath = StrUtil.removeSuffix(p.getCdPath(), "/");
-			loader.setParentPath(tomPath+File.separator+"webapps");
+			String projectPath = StrUtil.removeSuffix(p.getCdPath(), "/");
+			loader.setParentPath(projectPath);
 			loader.setIdProject(p.getIdProject());
 			Upload upload = new Upload("上传", loader);
 			upload.setImmediateMode(true);
@@ -273,6 +270,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			upload.addSucceededListener(loader);
 			return upload;
 		}).setCaption("上传文件");
+
 		Button btn = ComponentFactory.getStandardButton("添加项目");
 		btn.addClickListener(e -> popWindowAddProject(true, null));// false代表修改
 		contentLayout.addComponent(btn);
@@ -301,6 +299,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		pro.setCmdRestart(cmdReStart.getValue());
 		pro.setCmdRefresh(cmdRefresh.getValue());
 		pro.setCmdStatus(cmdStatus.getValue());
+		pro.setCmdStatusSuccessKey(cmdStatusKey.getValue());
 		pro.setCdDescription(descField.getValue());
 		if (update) {
 			QueryWrapper<CommonProjectMgmt> wrap = new QueryWrapper<CommonProjectMgmt>();
@@ -322,21 +321,23 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		grid.setItems(commonProjectMapper.selectList(wrap2));
 		win.close();
 		Notification.show("保存成功", Notification.Type.WARNING_MESSAGE);
-		return;
 	}
 
 	private void popWindowAddProject(boolean update, String idProject) {
 		FormLayout lay = new FormLayout();
 		lay.addStyleName("project-addproject-window");
 		idProjectField = ComponentFactory.getStandardTtextField("项目ID");
+		idProjectField.setRequiredIndicatorVisible(true);
 		idProjectField.setWidth("370px");
 		nameProjectField = ComponentFactory.getStandardTtextField("项目名称");
+		nameProjectField.setRequiredIndicatorVisible(true);
 		nameProjectField.setWidth("370px");
 		nameProjectField.setPlaceholder("不可以为空");
 		scriptPath = ComponentFactory.getStandardTtextField("脚本存放目录");
+		scriptPath.setRequiredIndicatorVisible(true);
 		scriptPath.setDescription("确保该目录脚本有执行权限");
 		scriptPath.setWidth("370px");
-		scriptPath.setPlaceholder("注：脚本存放目录");
+		scriptPath.setPlaceholder("注：脚本存放目录,示例：/usr/local/nginx/sbin");
 		classField = ComponentFactory.getStandardTtextField("tag");
 		classField.setWidth("370px");
 		cmdStart = ComponentFactory.getStandardTtextField("启动命令");
@@ -354,6 +355,9 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		cmdStatus = ComponentFactory.getStandardTtextField("查看状态");
 		cmdStatus.setPlaceholder("示例：sh server.sh status");
 		cmdStatus.setWidth("370px");
+		cmdStatusKey = ComponentFactory.getStandardTtextField("状态检查关键字");
+		cmdStatusKey.setPlaceholder("示例：nginx: master");
+		cmdStatusKey.setWidth("370px");
 		descField = ComponentFactory.getStandardTtextField("项目描述");
 		descField.setWidth("370px");
 		Button saveBtn = ComponentFactory.getStandardButton("保存");
@@ -373,8 +377,12 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 		lay.addComponent(cmdReStart);
 		lay.addComponent(cmdRefresh);
 		lay.addComponent(cmdStatus);
+		lay.addComponent(cmdStatusKey);
 		lay.addComponent(descField);
 		lay.addComponent(saveBtn);
+		Label label = ComponentFactory.getStandardLabel("提示：上传默认上传到了脚本存放目录，可修改该路径实现<br>上传各类文件到指定目录");
+		label.setContentMode(ContentMode.HTML);
+		lay.addComponent(label);
 
 		if (!update) {
 			QueryWrapper<CommonProjectMgmt> wrap = new QueryWrapper<CommonProjectMgmt>();
@@ -389,13 +397,14 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			cmdReStart.setValue(p.getCmdRestart() == null ? "" : p.getCmdRestart());
 			cmdRefresh.setValue(p.getCmdRefresh() == null ? "" : p.getCmdRefresh());
 			cmdStatus.setValue(p.getCmdStatus() == null ? "" : p.getCmdStatus());
+			cmdStatusKey.setValue(p.getCmdStatusSuccessKey() == null ? "" : p.getCmdStatusSuccessKey());
 			descField.setValue(p.getCdDescription() == null ? "" : p.getCdDescription());
 			classField.setValue(p.getCdTag() == null ? "" : p.getCdTag());
 		}
 
 		win = new Window("添加项目");
-		win.setHeight("600px");
-		win.setWidth("600px");
+		win.setHeight("700px");
+		win.setWidth("650px");
 		win.setModal(true);
 
 		win.setContent(lay);

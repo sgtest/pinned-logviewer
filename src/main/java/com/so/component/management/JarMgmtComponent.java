@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.so.component.util.*;
 import com.so.ui.LoginView;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
@@ -19,10 +20,6 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.so.component.CommonComponent;
-import com.so.component.util.ConfirmationDialogPopupWindow;
-import com.so.component.util.ConfirmationEvent;
-import com.so.component.util.ConfirmationEventListener;
-import com.so.component.util.FileUploader;
 import com.so.entity.ProjectList;
 import com.so.mapper.ProjectsMapper;
 import com.so.ui.ComponentFactory;
@@ -63,8 +60,8 @@ public class JarMgmtComponent extends CommonComponent {
 		mainPanel = new Panel();
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
+		contentLayout.setWidth("100%");
 		contentLayout.setHeight("700px");
-		contentLayout.setHeightFull();
 		mainPanel.setContent(contentLayout);
 		initMainLayout();
 	}
@@ -100,8 +97,8 @@ public class JarMgmtComponent extends CommonComponent {
 		List<ProjectList> selectList = projectsMapper.selectList(queryWrapper);
 		grid = new Grid<ProjectList>();
 		contentLayout.addComponent(grid);
-//		contentLayout.setExpandRatio(btn, 1);
-//		contentLayout.setExpandRatio(grid, 10);
+		contentLayout.setExpandRatio(absoluteLayout, 1);
+		contentLayout.setExpandRatio(grid, 10);
 		
 		grid.setWidthFull();
 		grid.setHeightFull();
@@ -218,7 +215,7 @@ public class JarMgmtComponent extends CommonComponent {
 			return b;
 		}).setCaption("查看状态");
 		grid.addComponentColumn(p -> {
-			Button b = ComponentFactory.getStandardButton("删除");
+			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
 					if (!LoginView.checkPermission("delete")){

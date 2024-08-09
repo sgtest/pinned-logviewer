@@ -16,6 +16,7 @@ public class CommonProjectMgmt {
 	private String cdDescription;
 	private String cdTag;
 	private String cmdStatus;
+	private String cmdStatusSuccessKey;
 
 	public String getIdHost() {
 		return idHost;
@@ -103,5 +104,13 @@ public class CommonProjectMgmt {
 
 	public void setCmdStatus(String cmdStatus) {
 		this.cmdStatus = cmdStatus;
+	}
+
+	public String getCmdStatusSuccessKey() {
+		return cmdStatusSuccessKey;
+	}
+
+	public void setCmdStatusSuccessKey(String cmdStatusSuccessKey) {
+		this.cmdStatusSuccessKey = cmdStatusSuccessKey;
 	}
 }

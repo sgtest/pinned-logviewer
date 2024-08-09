@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.so.component.util.*;
 import com.so.ui.LoginView;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
@@ -20,10 +21,6 @@ import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.so.component.CommonComponent;
-import com.so.component.util.ConfirmationDialogPopupWindow;
-import com.so.component.util.ConfirmationEvent;
-import com.so.component.util.ConfirmationEventListener;
-import com.so.component.util.RemoteFileUploader;
 import com.so.entity.ConnectionInfo;
 import com.so.entity.ProjectList;
 import com.so.mapper.ProjectsMapper;
@@ -70,8 +67,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		mainPanel = new Panel();
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
-		contentLayout.setHeight("690px");
-		contentLayout.setHeightFull();
+		contentLayout.setHeight("700px");
 		mainPanel.setContent(contentLayout);
 		initMainLayout();
 	}
@@ -107,7 +103,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		List<ProjectList> selectList = projectsMapper.selectList(queryWrapper);
 		grid = new Grid<ProjectList>();
 		contentLayout.addComponent(grid);
-//		contentLayout.setExpandRatio(btn, 1);
+		contentLayout.setExpandRatio(grid, 1);
 //		contentLayout.setExpandRatio(grid, 10);
 		
 		grid.setWidthFull();
@@ -258,7 +254,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			return b;
 		}).setCaption("查看状态");
 		grid.addComponentColumn(p -> {
-			Button b = ComponentFactory.getStandardButton("删除");
+			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
 					if (!LoginView.checkPermission("delete")){
@@ -481,7 +477,8 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			String name = nameField.getValue();
 			String tag = tagfield.getValue();
 			if (null == name && tag == null) {
-				Notification.show("请输入搜索条件", Notification.Type.WARNING_MESSAGE);
+				List<ProjectList> selectByMap = projectsMapper.selectList(new QueryWrapper<>());
+				grid.setItems(selectByMap);
 				return;
 			}
 			QueryWrapper<ProjectList> query = new QueryWrapper<ProjectList>();

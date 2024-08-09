@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Spliterator;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.so.component.util.*;
 import com.so.ui.LoginView;
+import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -22,29 +24,14 @@ import com.so.ui.ComponentFactory;
 import com.so.util.JSchUtil;
 import com.so.util.Util;
 import com.so.component.CommonComponent;
-import com.so.component.util.ConfirmationDialogPopupWindow;
-import com.so.component.util.ConfirmationEvent;
-import com.so.component.util.ConfirmationEventListener;
-import com.so.component.util.FileUploader;
 import com.so.entity.ConnectionInfo;
 import com.so.entity.ProjectList;
 import com.so.entity.TomcatInfoEntity;
 import com.so.mapper.ProjectsMapper;
 import com.so.mapper.TomcatInfoMapper;
 import com.vaadin.server.Extension;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.Column;
-import com.vaadin.ui.Notification;
 import com.vaadin.ui.Notification.Type;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -78,14 +65,17 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 	private Grid<TomcatInfoEntity> grid;
 	private ConnectionInfo addr;
 	private Session jschSession;
+	private Button searchBtn;
+	private TextField nameField;
+	private TextField tagfield;
 
 	@Override
 	public void initLayout() {
 		mainPanel = new Panel();
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
+		contentLayout.setWidth("100%");
 		contentLayout.setHeight("700px");
-		contentLayout.setHeightFull();
 		mainPanel.setContent(contentLayout);
 		initMainLayout();
 	}
@@ -94,10 +84,36 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 	 * 布局
 	 */
 	private void initMainLayout() {
+		AbsoluteLayout absoluteLayout = ComponentFactory.getAbsoluteLayout();
+		Label standardLabel = ComponentFactory.getStandardLabel("名称:");
+		nameField = ComponentFactory.getStandardTtextField();
+		Label tag = ComponentFactory.getStandardLabel("标签:");
+		tagfield = ComponentFactory.getStandardTtextField();
+		absoluteLayout.addComponent(standardLabel);
+		absoluteLayout.addComponent(nameField,"left:50px");
+		absoluteLayout.addComponent(tag,"left:280px");
+		absoluteLayout.addComponent(tagfield,"left:335px");
+		searchBtn = ComponentFactory.getStandardButton("搜索");
+		Button btn = ComponentFactory.getStandardButton("添加项目");
+		btn.addClickListener(e -> {
+			if (!LoginView.checkPermission("add")){
+				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+				return;
+			}
+			popWindowAddProject(true, null);
+		});// false代表修改
+		absoluteLayout.addComponent(searchBtn,"left:590px");
+		absoluteLayout.addComponent(btn,"left:690px");
+		contentLayout.addComponent(absoluteLayout);
+
 		QueryWrapper<TomcatInfoEntity> wrapper = new QueryWrapper<>();
 		wrapper.eq("id_host",addr.getIdHost());
 		List<TomcatInfoEntity> selectList = tomcatInfoMapper.selectList(wrapper);
 		grid = new Grid<TomcatInfoEntity>();
+		contentLayout.addComponent(grid);
+		contentLayout.setExpandRatio(absoluteLayout, 1);
+		contentLayout.setExpandRatio(grid, 10);
+
 		grid.setWidthFull();
 		grid.setHeightFull();
 		grid.setItems(selectList);
@@ -183,7 +199,7 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 			return b;
 		}).setCaption("查看状态").setId("status");
 		grid.addComponentColumn(p -> {
-			Button b = ComponentFactory.getStandardButton("删除");
+			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
 					if (!LoginView.checkPermission("delete")){
@@ -247,19 +263,6 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 			upload.addSucceededListener(loader);
 			return upload;
 		}).setCaption("上传war包");
-		Button btn = ComponentFactory.getStandardButton("添加项目");
-		btn.addClickListener(e -> {
-			if (!LoginView.checkPermission("add")){
-				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
-				return;
-			}
-			popWindowAddProject(true, null);
-		});// false代表修改
-		contentLayout.addComponent(btn);
-		contentLayout.addComponent(grid);
-		contentLayout.setComponentAlignment(btn, Alignment.MIDDLE_RIGHT);
-		contentLayout.setExpandRatio(btn, 1);
-		contentLayout.setExpandRatio(grid, 10);
 
 	}
 
@@ -289,25 +292,30 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 				tomcatInfoMapper.insert(pro);
 			}
 		} else {
-			tomcatInfoMapper.updateById(pro);
+			UpdateWrapper<TomcatInfoEntity> updateWrapper = new UpdateWrapper<>();
+			updateWrapper.eq("id_host",pro.getIdHost()).eq("tomcat_id",pro.getTomcatId());
+			tomcatInfoMapper.delete(updateWrapper);
+			tomcatInfoMapper.insert(pro);
 		}
 		QueryWrapper<TomcatInfoEntity> wrapper = new QueryWrapper<>();
 		wrapper.eq("id_host",addr.getIdHost());
 		grid.setItems(tomcatInfoMapper.selectList(wrapper));
 		win.close();
 		Notification.show("保存成功", Notification.Type.WARNING_MESSAGE);
-		return;
 	}
 
 	private void popWindowAddProject(boolean update, String idProject) {
 		FormLayout lay = new FormLayout();
 		lay.addStyleName("project-addproject-window");
 		idProjectField = ComponentFactory.getStandardTtextField("项目ID");
+		idProjectField.setRequiredIndicatorVisible(true);
 		idProjectField.setWidth("370px");
 		nameProjectField = ComponentFactory.getStandardTtextField("Tomcat名称");
+		nameProjectField.setRequiredIndicatorVisible(true);
 		nameProjectField.setWidth("370px");
 		nameProjectField.setPlaceholder("可以为空");
 		tomcatPath = ComponentFactory.getStandardTtextField("Tomcat的主目录");
+		tomcatPath.setRequiredIndicatorVisible(true);
 		tomcatPath.setDescription("确保该目录下包含bin、webapps、conf、lib等目录");
 		tomcatPath.setWidth("370px");
 		tomcatPath.setPlaceholder("注：Tomcat主目录");
@@ -366,8 +374,27 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 
 	@Override
 	public void registerHandler() {
-		// TODO Auto-generated method stub
-
+		searchBtn.addClickListener(e ->{
+			String name = nameField.getValue();
+			String tag = tagfield.getValue();
+			if (StrUtil.isEmpty(name) && StrUtil.isEmpty(tag)) {
+				QueryWrapper<TomcatInfoEntity> query = new QueryWrapper<TomcatInfoEntity>();
+				query.eq("id_host", addr.getIdHost());
+				List<TomcatInfoEntity> selectByMap = tomcatInfoMapper.selectList(query);
+				grid.setItems(selectByMap);
+				return;
+			}
+			QueryWrapper<TomcatInfoEntity> query = new QueryWrapper<TomcatInfoEntity>();
+			query.eq("id_host", addr.getIdHost());
+			if (StrUtil.isNotEmpty(name)) {
+				query.like("name_tomcat", name);
+			}
+			if (StrUtil.isNotEmpty(tag)) {
+				query.like("tag", tag);
+			}
+			List<TomcatInfoEntity> selectByMap = tomcatInfoMapper.selectList(query);
+			grid.setItems(selectByMap);
+		});
 	}
 
 	public ConnectionInfo getAddr() {

@@ -6,6 +6,7 @@ import com.so.component.CommonComponent;
 import com.so.component.ComponentUtil;
 import com.so.component.RemoteSSHComponent;
 import com.so.ui.LoginView;
+import com.vaadin.ui.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,14 +19,6 @@ import com.so.entity.ConnectionInfo;
 import com.so.mapper.ConnectionInfoMapper;
 import com.so.ui.ComponentFactory;
 import com.so.util.Util;
-import com.vaadin.ui.AbsoluteLayout;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
 
 /**
  * 远程服务器列表，读取配置文件中的列表
@@ -48,6 +41,7 @@ public class RemoteServerListComponent extends CommonComponent {
 	@Override
 	public void initLayout() {
 		mainPanel = new Panel();
+		mainPanel.setHeight("700px");
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
 		mainPanel.setContent(contentLayout);
@@ -70,7 +64,16 @@ public class RemoteServerListComponent extends CommonComponent {
 			ConnectionInfo info = new ConnectionInfo(split[0], split[3],  split[1],  split[2], split[4]);
 			serverListFromDb.add(info);
 		}
+		serverLayout.setHeight((600+serverListFromDb.size()*40)+"px");
 		int i = 0;
+//		添加刷新列表按钮
+		HorizontalLayout refreshL = ComponentFactory.getHorizontalLayout();
+		refreshL.setHeight("35px");
+		Button btn = ComponentFactory.getStandardButton("刷新列表");
+		refreshL.addComponent(btn);
+		refreshL.setComponentAlignment(btn,Alignment.MIDDLE_RIGHT);
+		btn.addClickListener(e -> this.initMainLayout());
+		serverLayout.addComponent(refreshL);
 		for (ConnectionInfo info : serverListFromDb) {
 			AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
 			if (i%2 != 0){
@@ -108,7 +111,6 @@ public class RemoteServerListComponent extends CommonComponent {
 			}
 			i ++;
 		}
-		serverLayout.setHeight((600+remoteServerList.size()*40)+"px");
 	}
 
 	private void refreshAndDeleteRecord(ConnectionInfo data) {

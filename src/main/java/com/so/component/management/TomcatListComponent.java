@@ -5,7 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.so.component.util.*;
 import com.so.ui.LoginView;
+import com.vaadin.ui.*;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,25 +19,10 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.so.ui.ComponentFactory;
 import com.so.util.Util;
 import com.so.component.CommonComponent;
-import com.so.component.util.ConfirmationDialogPopupWindow;
-import com.so.component.util.ConfirmationEvent;
-import com.so.component.util.ConfirmationEventListener;
-import com.so.component.util.FileUploader;
 import com.so.entity.ProjectList;
 import com.so.entity.TomcatInfoEntity;
 import com.so.mapper.ProjectsMapper;
 import com.so.mapper.TomcatInfoMapper;
-import com.vaadin.ui.Alignment;
-import com.vaadin.ui.Button;
-import com.vaadin.ui.FormLayout;
-import com.vaadin.ui.Grid;
-import com.vaadin.ui.Notification;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.UI;
-import com.vaadin.ui.Upload;
-import com.vaadin.ui.VerticalLayout;
-import com.vaadin.ui.Window;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -50,9 +37,10 @@ import cn.hutool.core.util.StrUtil;
 @Scope("prototype")
 public class TomcatListComponent extends CommonComponent {
 
-	
+
 	private static final Logger log = LoggerFactory.getLogger(TomcatListComponent.class);
 	private static final long serialVersionUID = -5516121570034623010L;
+	public static final String LOCALHOST = "localhost";
 	private Panel mainPanel;
 	private VerticalLayout contentLayout;
 
@@ -67,14 +55,17 @@ public class TomcatListComponent extends CommonComponent {
 	private Window win;
 	private TextField nameProjectField;
 	private Grid<TomcatInfoEntity> grid;
+	private Button searchBtn;
+	private TextField nameField;
+	private TextField tagfield;
 
 	@Override
 	public void initLayout() {
 		mainPanel = new Panel();
 		setCompositionRoot(mainPanel);
 		contentLayout = new VerticalLayout();
+		contentLayout.setWidth("100%");
 		contentLayout.setHeight("700px");
-		contentLayout.setHeightFull();
 		mainPanel.setContent(contentLayout);
 		initMainLayout();
 	}
@@ -83,10 +74,35 @@ public class TomcatListComponent extends CommonComponent {
 	 * 布局
 	 */
 	private void initMainLayout() {
+		AbsoluteLayout absoluteLayout = ComponentFactory.getAbsoluteLayout();
+		Label standardLabel = ComponentFactory.getStandardLabel("名称:");
+		nameField = ComponentFactory.getStandardTtextField();
+		Label tag = ComponentFactory.getStandardLabel("标签:");
+		tagfield = ComponentFactory.getStandardTtextField();
+		absoluteLayout.addComponent(standardLabel);
+		absoluteLayout.addComponent(nameField,"left:50px");
+		absoluteLayout.addComponent(tag,"left:280px");
+		absoluteLayout.addComponent(tagfield,"left:335px");
+		searchBtn = ComponentFactory.getStandardButton("搜索");
+		Button btn = ComponentFactory.getStandardButton("添加项目");
+		btn.addClickListener(e -> {
+			if (!LoginView.checkPermission("add")){
+				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+				return;
+			}
+			popWindowAddProject(true, null);
+		});// false代表修改
+		absoluteLayout.addComponent(searchBtn,"left:590px");
+		absoluteLayout.addComponent(btn,"left:690px");
+		contentLayout.addComponent(absoluteLayout);
+
 		QueryWrapper<TomcatInfoEntity> wrapper = new QueryWrapper<>();
-		wrapper.eq("id_host","localhost");
+		wrapper.eq("id_host", LOCALHOST);
 		List<TomcatInfoEntity> selectList = tomcatInfoMapper.selectList(wrapper);
 		grid = new Grid<TomcatInfoEntity>();
+		contentLayout.addComponent(grid);
+		contentLayout.setExpandRatio(absoluteLayout, 1);
+		contentLayout.setExpandRatio(grid, 10);
 		grid.setWidthFull();
 		grid.setHeightFull();
 		grid.setItems(selectList);
@@ -162,7 +178,7 @@ public class TomcatListComponent extends CommonComponent {
 			return b;
 		}).setCaption("查看状态");
 		grid.addComponentColumn(p -> {
-			Button b = ComponentFactory.getStandardButton("删除");
+			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
 					if (!LoginView.checkPermission("delete")){
@@ -175,10 +191,10 @@ public class TomcatListComponent extends CommonComponent {
 						@Override
 						protected void confirmed(ConfirmationEvent event) {
 							UpdateWrapper<TomcatInfoEntity> wrapper = new UpdateWrapper<>();
-							wrapper.eq("id_host","localhost").eq("tomcat_id",p.getTomcatId());
+							wrapper.eq("id_host", LOCALHOST).eq("tomcat_id",p.getTomcatId());
 							tomcatInfoMapper.delete(wrapper);
 							QueryWrapper<TomcatInfoEntity> wrapper2 = new QueryWrapper<>();
-							wrapper2.eq("id_host","localhost");
+							wrapper2.eq("id_host", LOCALHOST);
 							grid.setItems(tomcatInfoMapper.selectList(wrapper2));
 						}
 
@@ -222,20 +238,6 @@ public class TomcatListComponent extends CommonComponent {
 			upload.addSucceededListener(loader);
 			return upload;
 		}).setCaption("上传war包");
-		Button btn = ComponentFactory.getStandardButton("添加项目");
-		btn.addClickListener(e -> {
-			if (!LoginView.checkPermission("add")){
-				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
-				return;
-			}
-			popWindowAddProject(true, null);
-		});// false代表修改
-		contentLayout.addComponent(btn);
-		contentLayout.addComponent(grid);
-		contentLayout.setComponentAlignment(btn, Alignment.MIDDLE_RIGHT);
-		contentLayout.setExpandRatio(btn, 1);
-		contentLayout.setExpandRatio(grid, 10);
-
 	}
 
 	private void saveOrUpdateProject(boolean update) {
@@ -245,7 +247,7 @@ public class TomcatListComponent extends CommonComponent {
 			Notification.show("项目ID、项目所在路径不能为空！", Notification.Type.WARNING_MESSAGE);
 			return;
 		}
-		pro.setIdHost("localhost");
+		pro.setIdHost(LOCALHOST);
 		pro.setTomcatId(idProjectField.getValue());
 		pro.setNameTomcat(nameProjectField.getValue());
 		pro.setTomcatPath(tomcatPath.getValue());
@@ -254,7 +256,7 @@ public class TomcatListComponent extends CommonComponent {
 		pro.setCdDescription(descField.getValue());
 		if (update) {
 			QueryWrapper<TomcatInfoEntity> wrapper2 = new QueryWrapper<>();
-			wrapper2.eq("id_host","localhost").eq("tomcat_id",pro.getTomcatId());
+			wrapper2.eq("id_host", LOCALHOST).eq("tomcat_id",pro.getTomcatId());
 			TomcatInfoEntity selectById = tomcatInfoMapper.selectOne(wrapper2);
 			if (null != selectById) {
 				Notification.show("项目ID不能重复！", Notification.Type.WARNING_MESSAGE);
@@ -263,10 +265,13 @@ public class TomcatListComponent extends CommonComponent {
 				tomcatInfoMapper.insert(pro);
 			}
 		} else {
-			tomcatInfoMapper.updateById(pro);
+			UpdateWrapper<TomcatInfoEntity> updateWrapper = new UpdateWrapper<>();
+			updateWrapper.eq("id_host",pro.getIdHost()).eq("tomcat_id",pro.getTomcatId());
+			tomcatInfoMapper.delete(updateWrapper);
+			tomcatInfoMapper.insert(pro);
 		}
 		QueryWrapper<TomcatInfoEntity> wrapper = new QueryWrapper<>();
-		wrapper.eq("id_host","localhost");
+		wrapper.eq("id_host", LOCALHOST);
 		grid.setItems(tomcatInfoMapper.selectList(wrapper));
 		win.close();
 		Notification.show("保存成功", Notification.Type.WARNING_MESSAGE);
@@ -277,11 +282,14 @@ public class TomcatListComponent extends CommonComponent {
 		FormLayout lay = new FormLayout();
 		lay.addStyleName("project-addproject-window");
 		idProjectField = ComponentFactory.getStandardTtextField("项目ID");
+		idProjectField.setRequiredIndicatorVisible(true);
 		idProjectField.setWidth("370px");
 		nameProjectField = ComponentFactory.getStandardTtextField("Tomcat名称");
+		nameProjectField.setRequiredIndicatorVisible(true);
 		nameProjectField.setWidth("370px");
 		nameProjectField.setPlaceholder("可以为空");
 		tomcatPath = ComponentFactory.getStandardTtextField("Tomcat的主目录");
+		tomcatPath.setRequiredIndicatorVisible(true);
 		tomcatPath.setDescription("确保该目录下包含bin、webapps、conf、lib等目录");
 		tomcatPath.setWidth("370px");
 		tomcatPath.setPlaceholder("注：Tomcat主目录");
@@ -310,7 +318,7 @@ public class TomcatListComponent extends CommonComponent {
 
 		if (!update) {
 			QueryWrapper<TomcatInfoEntity> wrapper = new QueryWrapper<>();
-			wrapper.eq("id_host","localhost").eq("tomcat_id",idProject);
+			wrapper.eq("id_host", LOCALHOST).eq("tomcat_id",idProject);
 			TomcatInfoEntity p = tomcatInfoMapper.selectOne(wrapper);
 			if (null != p){
 				idProjectField.setValue(p.getTomcatId());
@@ -334,14 +342,32 @@ public class TomcatListComponent extends CommonComponent {
 
 	@Override
 	public void initContent() {
-		// TODO Auto-generated method stub
 
 	}
 
 	@Override
 	public void registerHandler() {
-		// TODO Auto-generated method stub
-
+		searchBtn.addClickListener(e ->{
+			String name = nameField.getValue();
+			String tag = tagfield.getValue();
+			if (StrUtil.isEmpty(name) && StrUtil.isEmpty(tag)) {
+				QueryWrapper<TomcatInfoEntity> query = new QueryWrapper<TomcatInfoEntity>();
+				query.eq("id_host", LOCALHOST);
+				List<TomcatInfoEntity> selectByMap = tomcatInfoMapper.selectList(query);
+				grid.setItems(selectByMap);
+				return;
+			}
+			QueryWrapper<TomcatInfoEntity> query = new QueryWrapper<TomcatInfoEntity>();
+			query.eq("id_host", LOCALHOST);
+			if (StrUtil.isNotEmpty(name)) {
+				query.like("name_tomcat", name);
+			}
+			if (StrUtil.isNotEmpty(tag)) {
+				query.like("tag", tag);
+			}
+			List<TomcatInfoEntity> selectByMap = tomcatInfoMapper.selectList(query);
+			grid.setItems(selectByMap);
+		});
 	}
 
 
