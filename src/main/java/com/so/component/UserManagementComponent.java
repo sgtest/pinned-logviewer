@@ -1,34 +1,27 @@
 package com.so.component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.so.entity.User;
+import com.so.mapper.UserDao;
+import com.so.ui.ComponentFactory;
 import com.so.ui.LoginView;
-import com.vaadin.data.provider.ListDataProvider;
-import com.vaadin.server.VaadinSession;
+import com.so.util.Constants;
+import com.so.util.Util;
 import com.vaadin.ui.*;
+import com.vaadin.ui.Button.ClickEvent;
+import com.vaadin.ui.Button.ClickListener;
+import com.vaadin.ui.Grid.SelectionMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
-
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import com.so.ui.ComponentFactory;
-import com.so.util.Util;
-import com.so.entity.User;
-import com.so.mapper.UserDao;
-import com.vaadin.ui.Button.ClickEvent;
-import com.vaadin.ui.Button.ClickListener;
-import com.vaadin.ui.Grid.SelectionMode;
 import org.vaadin.addons.ComboBoxMultiselect;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @Scope("prototype")
@@ -146,7 +139,7 @@ public class UserManagementComponent extends CommonComponent {
 
 			@Override
 			public void buttonClick(ClickEvent event) {
-				if (!LoginView.checkPermission("add")){
+				if (!LoginView.checkPermission(Constants.ADD)){
 					Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 					return;
 				}
@@ -160,7 +153,7 @@ public class UserManagementComponent extends CommonComponent {
 
 			@Override
 			public void buttonClick(ClickEvent event) {
-				if (!LoginView.checkPermission("delete")){
+				if (!LoginView.checkPermission(Constants.DELETE)){
 					Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 					return;
 				}
@@ -195,7 +188,7 @@ public class UserManagementComponent extends CommonComponent {
 
 			@Override
 			public void buttonClick(ClickEvent event) {
-				if (!LoginView.checkPermission("update")){
+				if (!LoginView.checkPermission(Constants.UPDATE)){
 					Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 					return;
 				}
@@ -232,7 +225,7 @@ public class UserManagementComponent extends CommonComponent {
 			TextField usernameField = ComponentFactory.getStandardTtextField("用户名：");
 			TextField passField = ComponentFactory.getStandardPassedwordField("密码：");
 			ComboBoxMultiselect permission = ComponentFactory.getComboxMultiselect("权限");
-			permission.setItems("add","delete","update","query","all");
+			permission.setItems(Constants.ADD,Constants.DELETE,Constants.UPDATE,Constants.QUERY,Constants.ALL);
 			if (!add) {
 				User currentSelectedUser = null;
 				Set<User> selectedItems = userGrid.getSelectedItems();
@@ -250,7 +243,7 @@ public class UserManagementComponent extends CommonComponent {
 					}
 				}
 			}else{
-				permission.select("query");
+				permission.select(Constants.QUERY);
 			}
 			lay.addComponent(usernameField);
 			lay.addComponent(passField);
@@ -271,7 +264,7 @@ public class UserManagementComponent extends CommonComponent {
 						value.stream().forEach(e1 -> buf.append(e1.toString()+","));
 						user.setPermission(buf.toString());
 					}else{
-						user.setPermission("query");
+						user.setPermission(Constants.QUERY);
 					}
 					userDao.updateById(user);
 					this.close();
@@ -292,7 +285,7 @@ public class UserManagementComponent extends CommonComponent {
 							value.stream().forEach(e1 -> buf.append(e1.toString() + ","));
 							u.setPermission(buf.toString());
 						} else {
-							u.setPermission("query");
+							u.setPermission(Constants.QUERY);
 						}
 						userDao.insert(u);
 						this.close();

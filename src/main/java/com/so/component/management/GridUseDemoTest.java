@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.so.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
@@ -100,7 +101,7 @@ public class GridUseDemoTest extends CommonComponent {
 			Set<User> selectedItems = grid.getSelectedItems();
 			System.out.println(selectedItems);
 		});
-		grid.addColumn(person -> "Delete", ren).setCaption("button");
+		grid.addColumn(person -> Constants.DELETE, ren).setCaption("button");
 
 		/**使用componentColumn生成列的button ，相比render 更为灵活可以单独设置button的各种属性*/
 		grid.addComponentColumn(p -> {

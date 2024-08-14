@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.so.component.util.*;
 import com.so.ui.LoginView;
+import com.so.util.Constants;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -88,7 +89,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 		searchBtn = ComponentFactory.getStandardButton("搜索");
 		Button btn = ComponentFactory.getStandardButton("添加项目");
 		btn.addClickListener(e -> {
-			if (!LoginView.checkPermission("add")){
+			if (!LoginView.checkPermission(Constants.ADD)){
 				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 				return;
 			}
@@ -257,7 +258,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
-					if (!LoginView.checkPermission("delete")){
+					if (!LoginView.checkPermission(Constants.DELETE)){
 						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 						return;
 					}
@@ -291,7 +292,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			Button b = ComponentFactory.getStandardButton("修改");
 			b.addClickListener(e -> {
 				try {
-					if (!LoginView.checkPermission("update")){
+					if (!LoginView.checkPermission(Constants.UPDATE)){
 						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 						return;
 					}
@@ -315,7 +316,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			Upload upload = new Upload("上传", loader);
 			upload.setImmediateMode(true);
 			upload.addStartedListener(event ->{
-				if (!LoginView.checkPermission("upload")){
+				if (!LoginView.checkPermission(Constants.UPLOAD)){
 					Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 					throw new RuntimeException("权限不足，终止上传");
 				}

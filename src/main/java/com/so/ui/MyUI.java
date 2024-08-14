@@ -29,7 +29,7 @@ import com.vaadin.ui.UI;
 @Theme("mytheme")
 @Widgetset(value="com.so.AppWidgetset")
 @PreserveOnRefresh
-@Push(transport = Transport.LONG_POLLING)
+@Push
 @SpringUI
 public class MyUI extends UI {
 

@@ -1,24 +1,27 @@
 package com.so.component.remote;
 
-import java.util.List;
-
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.so.component.CommonComponent;
 import com.so.component.ComponentUtil;
 import com.so.component.RemoteSSHComponent;
+import com.so.component.util.FileUploader;
+import com.so.component.util.TabSheetUtil;
+import com.so.entity.ConnectionInfo;
+import com.so.mapper.ConnectionInfoMapper;
+import com.so.ui.ComponentFactory;
 import com.so.ui.LoginView;
+import com.so.util.Constants;
+import com.so.util.SSHClientUtil;
+import com.so.util.Util;
 import com.vaadin.ui.*;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.so.component.util.TabSheetUtil;
-import com.so.entity.ConnectionInfo;
-import com.so.mapper.ConnectionInfoMapper;
-import com.so.ui.ComponentFactory;
-import com.so.util.Util;
+import java.util.List;
 
 /**
  * 远程服务器列表，读取配置文件中的列表
@@ -36,8 +39,12 @@ public class RemoteServerListComponent extends CommonComponent {
 	private static final long serialVersionUID = 8995914798319911923L;
 	private Panel mainPanel;
 	private VerticalLayout contentLayout;
+	public FileUploader loader;
 	@Autowired
 	private ConnectionInfoMapper connectionInfoMapper;
+	private Button addBtn;
+	private MySshWindow win;
+
 	@Override
 	public void initLayout() {
 		mainPanel = new Panel();
@@ -68,11 +75,19 @@ public class RemoteServerListComponent extends CommonComponent {
 		int i = 0;
 //		添加刷新列表按钮
 		HorizontalLayout refreshL = ComponentFactory.getHorizontalLayout();
+		refreshL.setDefaultComponentAlignment(Alignment.MIDDLE_RIGHT);
 		refreshL.setHeight("35px");
 		Button btn = ComponentFactory.getStandardButton("刷新列表");
+		btn.setWidth("100px");
+		addBtn = ComponentFactory.getStandardButton("添加机器");
+		addBtn.setWidth("100px");
 		refreshL.addComponent(btn);
-		refreshL.setComponentAlignment(btn,Alignment.MIDDLE_RIGHT);
-		btn.addClickListener(e -> this.initMainLayout());
+		refreshL.addComponent(addBtn);
+		refreshL.setExpandRatio(btn,1);
+		btn.addClickListener(e -> {
+			this.initMainLayout();
+			this.registerHandler();
+		});
 		serverLayout.addComponent(refreshL);
 		for (ConnectionInfo info : serverListFromDb) {
 			AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
@@ -86,7 +101,7 @@ public class RemoteServerListComponent extends CommonComponent {
 			Button deleteBtn = ComponentFactory.getStandardButton("删除");
 			deleteBtn.setData(info);
 			deleteBtn.addClickListener(e ->{
-				if (!LoginView.checkPermission("delete")){
+				if (!LoginView.checkPermission(Constants.DELETE)){
 					Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 					return;
 				}
@@ -102,10 +117,22 @@ public class RemoteServerListComponent extends CommonComponent {
 			sshBtn.addClickListener(e ->{
 				addRemoteSSHTab(info);
 			});
+			Button fileBtn = ComponentFactory.getStandardButton("文件管理");
+			fileBtn.setData(info);
+			fileBtn.addClickListener(e ->{
+				addRemoteFileTab(info);
+			});
+			Button monitorBtn = ComponentFactory.getStandardButton("指标监控");
+			monitorBtn.setData(info);
+			monitorBtn.addClickListener(e ->{
+				addMonitorTab(info);
+			});
 			abs.addComponent(serverLb);
 			abs.addComponent(manageBtn,"left:155px;");
 			abs.addComponent(sshBtn,"left:300px;");
-			abs.addComponent(deleteBtn,"left:440px;");
+			abs.addComponent(fileBtn,"left:440px;");
+			abs.addComponent(monitorBtn,"left:578px;");
+			abs.addComponent(deleteBtn,"left:710px;");
 			if (i == serverListFromDb.size()-1) {
 				serverLayout.setExpandRatio(abs, 1);
 			}
@@ -169,15 +196,141 @@ public class RemoteServerListComponent extends CommonComponent {
 		TabSheetUtil.getMainTabsheet().setSelectedTab(bean);
 	}
 
+	private void addRemoteFileTab(ConnectionInfo data) {
+		RemoteFileMgmtComponent bean = ComponentUtil.applicationContext.getBean(RemoteFileMgmtComponent.class);
+		bean.setAddr(data);
+		bean.setHostName(data.getIdHost());
+		bean.initLayout();
+		bean.initContent();
+		bean.registerHandler();
+		TabSheetUtil.getMainTabsheet().addTab(bean,"文件-"+data.getIdHost()).setClosable(true);
+		TabSheetUtil.getMainTabsheet().setSelectedTab(bean);
+	}
+
+	private void addMonitorTab(ConnectionInfo data) {
+		RemoteMonitorComponent bean = ComponentUtil.applicationContext.getBean(RemoteMonitorComponent.class);
+		bean.setCurrentConnectionInfo(data);
+		bean.initLayout();
+		bean.initContent();
+		bean.registerHandler();
+		TabSheetUtil.getMainTabsheet().addTab(bean,"监控-"+data.getIdHost()).setClosable(true);
+		TabSheetUtil.getMainTabsheet().setSelectedTab(bean);
+	}
+
 	@Override
 	public void initContent() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override
 	public void registerHandler() {
-		// TODO Auto-generated method stub
+		addBtn.addClickListener(e ->{
+			if (null != win) {
+				win.clear();
+				UI.getCurrent().addWindow(win);
+				win.setModal(true);
+			} else {
+				win = new MySshWindow("连接信息输入");
+				UI.getCurrent().addWindow(win);
+				win.setModal(true);
+			}
+		});
+	}
 
+	class MySshWindow extends Window {
+		private TextField usernameField;
+		private TextField passField;
+		private TextField host;
+		private TextField port;
+		public void clear() {
+			host.setValue("");
+			usernameField.setValue("");
+			passField.setValue("");
+		}
+		public MySshWindow(String title) {
+			super(title); // Set window caption
+			center();
+			setClosable(true);
+			setHeight("400px");
+			setWidth("370px");
+
+			VerticalLayout ver = new VerticalLayout();
+			ver.setSizeFull();
+			FormLayout lay = new FormLayout();
+			lay.setHeight("230px");
+			host = ComponentFactory.getStandardTtextField("主机：");
+			port = new TextField("端口：");
+			port.setValue("22");
+			usernameField = ComponentFactory.getStandardTtextField("用户名：");
+
+			passField = ComponentFactory.getStandardPassedwordField("密码：");
+			lay.addComponent(host);
+			lay.addComponent(port);
+			lay.addComponent(usernameField);
+			lay.addComponent(passField);
+			ver.addComponent(lay);
+			AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+			abs.setHeight("100px");
+			ver.addComponent(abs);
+			ver.setExpandRatio(abs, 1);
+			Button confirm = ComponentFactory.getStandardButton("连接", e -> {
+				if (null != usernameField.getValue() && !"".equals(usernameField.getValue()) && null != passField.getValue()
+						&& !"".equals(passField.getValue()) && null != host.getValue() && !"".equals(host.getValue())) {
+					String hostName = host.getValue();
+					Integer sshPort = Integer.valueOf(port.getValue());
+					String userName = usernameField.getValue();
+					String password = passField.getValue();
+					try {
+						if (null != loader.getFile()) {
+							//上传了秘钥
+							log.info("使用秘钥连接");
+							SSHClientUtil client = new SSHClientUtil(hostName,sshPort,loader.getKeypath());
+							client.openConnection();
+//							session = JschUtil.createSession(hostName, sshPort, userName, loader.getKeypath(), password == null ? null :password.getBytes());
+//							channel = JschUtil.openSftp(session, 1800);
+						}else {
+							SSHClientUtil client = new SSHClientUtil(hostName,sshPort,userName,password);
+							client.openConnection();
+//							session = JschUtil.createSession(hostName, sshPort, userName, password);
+//							channel = JschUtil.openSftp(session, 1800);
+						}
+					} catch (Exception ex) {
+						log.error(ExceptionUtils.getStackTrace(ex));
+						Notification.show("创建链接失败，请检查IP、端口、用户名、密码是否有误！", Notification.Type.WARNING_MESSAGE);
+						return;
+					}
+
+					// 如果连接成功保存用户的配置
+//					1saveUserConfig(host.getValue(), Integer.valueOf(port.getValue()), usernameField.getValue(), passField.getValue());
+					try {
+						connectionInfoMapper.insert(new ConnectionInfo(host.getValue(), port.getValue(), usernameField.getValue(), passField.getValue(), loader.getKeypath()));
+					} catch (Exception e1) {
+						Notification.show("链接信息已经存在！", Notification.Type.WARNING_MESSAGE);
+						return;
+					}
+					this.close();
+					Notification.show("链接添加成功", Notification.Type.WARNING_MESSAGE);
+					initMainLayout();
+					registerHandler();
+				} else {
+					Notification.show("用户名或密码输入有误", Notification.Type.WARNING_MESSAGE);
+				}
+			});
+			Button cancel = ComponentFactory.getStandardButton("取消", e -> {
+				this.close();
+			});
+			// Create the upload with a caption and set receiver later
+			Label lb = new Label("秘钥:");
+			lb.setWidth("50px");
+			loader = new FileUploader();
+			Upload upload = new Upload("上传秘钥",loader);
+			upload.setButtonCaption("上传秘钥");
+			upload.setHeight("30px");
+			upload.addSucceededListener(loader);
+			abs.addComponent(lb, "right:295px;top:5px;");
+			abs.addComponent(upload, "right:183px;");
+			abs.addComponent(confirm, "right:100px;top:60px;");
+			abs.addComponent(cancel, "right:10px;top:60px");
+			setContent(ver);
+		}
 	}
 }

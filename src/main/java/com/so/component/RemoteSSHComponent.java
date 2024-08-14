@@ -224,6 +224,7 @@ public class RemoteSSHComponent extends CommonComponent {
 		}else {
 			textArea.setValue(value + bf.toString());
 		}
+		UI.getCurrent().getPage().getJavaScript().execute("this.scrollTop = this.scrollHeight;");
 	}
 
 	private void createSession() {

@@ -583,9 +583,8 @@ public class RemoteLoginComponent extends CommonComponent {
 						}
 					} catch (Exception ex) {
 						log.error(ExceptionUtils.getStackTrace(ex));
-						ex.printStackTrace();
-						this.close();
-						Notification.show("链接创建失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
+						Notification.show("创建链接失败，请检查IP、端口、用户名是否有误！", Notification.Type.WARNING_MESSAGE);
+						return;
 					}
 
 					// 如果连接成功保存用户的配置
@@ -594,6 +593,7 @@ public class RemoteLoginComponent extends CommonComponent {
 						connectionInfoMapper.insert(new ConnectionInfo(host.getValue(), port.getValue(), usernameField.getValue(), passField.getValue(), loader.getKeypath()));
 					} catch (Exception e1) {
 						log.error("链接信息已存在");
+						return;
 					}
 					this.close();
 					Notification.show("链接成功，可以开始搜索和下载文件了。", Notification.Type.WARNING_MESSAGE);

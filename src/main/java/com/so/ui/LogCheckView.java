@@ -78,12 +78,13 @@ public class LogCheckView extends VerticalLayout implements View {
 		MenuItem toolItem = menuBar.addItem("其他工具");
 		MenuItem userItem = menuBar.addItem("用户管理");
 		//子菜单
-		addSubMenu(localMgmt,"LogSearchComponent","日志搜索");
+		addSubMenu(localMgmt,"LogSearchComponent","本地日志搜索");
+		addSubMenu(localMgmt,"management.LocalFileMgmtComponent","本地文件管理");
 		addSubMenu(localMgmt,"management.JarMgmtComponent","jar项目管理");
 		addSubMenu(localMgmt,"management.TomcatListComponent","Tomcat管理");
 		addSubMenu(localMgmt,"management.CommonProjecttMgmtLocal","通用项目管理");
 
-		addSubMenu(remoteMgmt,"remote.RemoteLoginComponent","登录远程服务器");
+		addSubMenu(remoteMgmt,"remote.RemoteLoginComponent","远程日志搜索");
 		addSubMenu(remoteMgmt,"remote.RemoteServerListComponent","免登录服务器列表");
 //		addSubMenu(publishItem,"management.TestTomcatManage","测试Tomcat启停");
 //		addSubMenu(publishItem,"management.UserGuideComponent","使用说明");
@@ -123,7 +124,13 @@ public class LogCheckView extends VerticalLayout implements View {
 		userGuideComponent.initLayout();
 		userGuideComponent.initContent();
 		userGuideComponent.registerHandler();
+
+		logSearchComponent.initLayout();
+		logSearchComponent.initContent();
+		logSearchComponent.registerHandler();
 		mainTabsheet.addTab(userGuideComponent, "使用说明");
+		mainTabsheet.addTab(logSearchComponent, "本地日志搜索");
+		mainTabsheet.setSelectedTab(logSearchComponent);
 		setExpandRatio(mainTabsheet, 1);
 		//当关闭tab时关闭远程连接会话
 		mainTabsheet.addComponentDetachListener(e ->{
@@ -138,14 +145,6 @@ public class LogCheckView extends VerticalLayout implements View {
 			}
 			if (detachedComponent instanceof RemoteLogSearchComponent) {
 				RemoteLogSearchComponent com = (RemoteLogSearchComponent)detachedComponent;
-				try {
-					com.closeChannel();
-				} catch (Exception e1) {
-					e1.printStackTrace();
-				}
-			}
-			if (detachedComponent instanceof RemoteSSHComponent) {
-				RemoteSSHComponent com = (RemoteSSHComponent)detachedComponent;
 				try {
 					com.closeChannel();
 				} catch (Exception e1) {

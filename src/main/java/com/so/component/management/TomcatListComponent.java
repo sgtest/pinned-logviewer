@@ -7,6 +7,7 @@ import java.util.List;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.so.component.util.*;
 import com.so.ui.LoginView;
+import com.so.util.Constants;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -86,7 +87,7 @@ public class TomcatListComponent extends CommonComponent {
 		searchBtn = ComponentFactory.getStandardButton("搜索");
 		Button btn = ComponentFactory.getStandardButton("添加项目");
 		btn.addClickListener(e -> {
-			if (!LoginView.checkPermission("add")){
+			if (!LoginView.checkPermission(Constants.ADD)){
 				Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 				return;
 			}
@@ -181,7 +182,7 @@ public class TomcatListComponent extends CommonComponent {
 			Button b = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
 			b.addClickListener(e -> {
 				try {
-					if (!LoginView.checkPermission("delete")){
+					if (!LoginView.checkPermission(Constants.DELETE)){
 						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
 						return;
 					}

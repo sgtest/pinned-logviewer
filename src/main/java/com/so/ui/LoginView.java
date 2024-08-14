@@ -8,6 +8,7 @@ import java.util.HashMap;
 
 import javax.sql.DataSource;
 
+import com.so.util.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -234,7 +235,7 @@ public class LoginView extends VerticalLayout implements View {
 
 		public static boolean checkPermission(String res){
 			User user = (User)VaadinSession.getCurrent().getAttribute("user");
-			if (null != user.getPermission() && user.getPermission().contains("all")){
+			if (null != user.getPermission() && user.getPermission().contains(Constants.ALL)){
 				return true;
 			}
 			if (null != user.getPermission() && user.getPermission().contains(res)){
