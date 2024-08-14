@@ -1,5 +1,7 @@
 package com.so.entity;
 
+import java.util.Objects;
+
 public class ConnectionInfo {
 
 	private String idHost;
@@ -55,6 +57,21 @@ public class ConnectionInfo {
 	public void setCdLogpath(String cdLogpath) {
 		this.cdLogpath = cdLogpath;
 	}
-	
-	
+
+	@Override
+	public boolean equals(Object o) {
+		if (this == o) {
+			return true;
+		}
+		if (o == null || getClass() != o.getClass()) {
+			return false;
+		}
+		ConnectionInfo that = (ConnectionInfo) o;
+		return idHost.equals(that.idHost) && cdPort.equals(that.cdPort);
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(idHost, cdPort);
+	}
 }

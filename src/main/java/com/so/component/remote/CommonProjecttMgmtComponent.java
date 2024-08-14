@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Spliterator;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.so.ui.LoginView;
+import com.so.util.Constants;
 import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.*;
 import org.apache.commons.lang3.StringUtils;
@@ -217,6 +219,10 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			Button b = ComponentFactory.getStandardButton("删除");
 			b.addClickListener(e -> {
 				try {
+					if (!LoginView.checkPermission(Constants.DELETE)){
+						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+						return;
+					}
 					ConfirmationDialogPopupWindow yesNo = new ConfirmationDialogPopupWindow("确认", "请确认是否要删除！", "确定", "放弃", false);
 					yesNo.addListener(new ConfirmationEventListener() {
 						private static final long serialVersionUID = -8751718063979484449L;
@@ -228,6 +234,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 							QueryWrapper<CommonProjectMgmt> queryWrapper = new QueryWrapper<>();
 							queryWrapper.eq("id_host",addr.getIdHost());
 							grid.setItems(commonProjectMapper.selectList(queryWrapper));
+							yesNo.close();
 						}
 
 						@Override
@@ -239,7 +246,6 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 					yesNo.showConfirmation();
 				} catch (Exception e1) {
 					Notification.show("删除失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
-					e1.printStackTrace();
 					log.error(ExceptionUtils.getStackTrace(e1));
 				}
 			});
@@ -249,6 +255,10 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			Button b = ComponentFactory.getStandardButton("修改");
 			b.addClickListener(e -> {
 				try {
+					if (!LoginView.checkPermission(Constants.UPDATE)){
+						Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+						return;
+					}
 					popWindowAddProject(false, p.getIdProject());
 				} catch (Exception e1) {
 					Notification.show("系统繁忙", Notification.Type.WARNING_MESSAGE);
