@@ -6414,9 +6414,10 @@ div.v-layout.v-horizontal.v-widget {
 
 .mytheme .v-grid-row-selected  > .v-grid-cell {
 	background-color: #197de1;
-	background-image: -webkit-linear-gradient(top, #1b87e3 2%, #166ed5 98%);
-	background-image: linear-gradient(to bottom,#1b87e3 2%, #166ed5 98%);
-	color: #c8dbed;
+
+	background-image: -webkit-linear-gradient(top, #44a9ff 2%, #4c9fff 98%);
+	/*background-image: linear-gradient(to bottom,#1b87e3 2%, #166ed5 98%);*/
+	color: #ffffff;
 	text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.05);
 	border-color: #1d69b4;
 }

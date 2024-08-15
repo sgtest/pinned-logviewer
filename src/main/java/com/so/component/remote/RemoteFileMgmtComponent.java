@@ -8,6 +8,7 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.SftpException;
 import com.so.component.CommonComponent;
+import com.so.component.ComponentUtil;
 import com.so.component.util.ColorEnum;
 import com.so.component.util.ConfirmationDialogPopupWindow;
 import com.so.component.util.RemoteFileUploaderForSshj;
@@ -86,14 +87,9 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         contentLayout.setExpandRatio(grid, 1);
         grid.setWidthFull();
         grid.setHeightFull();
-        grid.addColumn(RemoteFileInfo::getFileName).setCaption("名称");
-        grid.addColumn(RemoteFileInfo::getPermission).setCaption("权限");
-        grid.addColumn(RemoteFileInfo::getUserName).setCaption("用户");
-        grid.addColumn(RemoteFileInfo::getSize).setCaption("大小");
-        grid.addColumn(RemoteFileInfo::getLastModify).setCaption("修改时间");
-        grid.addComponentColumn(file -> {
+        grid.addComponentColumn(file ->{
             if (!file.getIsFile()) {
-                Button b = ComponentFactory.getLinkButton("进入");
+                Button b = ComponentFactory.getLinkButton(file.getFileName());
                 b.addClickListener(e -> {
                     initGridContent(file.getCurrentPath());
                     pathList.add(file.getCurrentPath());
@@ -101,8 +97,25 @@ public class RemoteFileMgmtComponent extends CommonComponent {
                 });
                 return b;
             }
-            return null;
-        }).setCaption("打开");
+            return ComponentFactory.getStandardLabel(file.getFileName());
+        }).setCaption("名称");
+        grid.addColumn(RemoteFileInfo::getFileName).setCaption("名称");
+        grid.addColumn(RemoteFileInfo::getPermission).setCaption("权限");
+        grid.addColumn(RemoteFileInfo::getUserName).setCaption("用户");
+        grid.addColumn(RemoteFileInfo::getSize).setCaption("大小");
+        grid.addColumn(RemoteFileInfo::getLastModify).setCaption("修改时间");
+//        grid.addComponentColumn(file -> {
+//            if (!file.getIsFile()) {
+//                Button b = ComponentFactory.getLinkButton("进入");
+//                b.addClickListener(e -> {
+//                    initGridContent(file.getCurrentPath());
+//                    pathList.add(file.getCurrentPath());
+//                    pathLb.setValue(file.getCurrentPath());
+//                });
+//                return b;
+//            }
+//            return null;
+//        }).setCaption("打开");
         grid.addComponentColumn(file -> {
             if (!file.getIsFile()) {
                 RemoteFileUploaderForSshj loader = new RemoteFileUploaderForSshj();
@@ -145,11 +158,15 @@ public class RemoteFileMgmtComponent extends CommonComponent {
                         if (file.getIsFile()) {
                             clientUtil.getSftpClient().rm(file.getCurrentPath());
                         } else {
-                            clientUtil.getSftpClient().rmdir(file.getCurrentPath());
+                            Notification.show("提示：", "为安全起见，暂不支持删除目录", Notification.Type.WARNING_MESSAGE);
+//                            clientUtil.getSftpClient().rmdir(file.getCurrentPath());
+                            win.close();
+                            return;
                         }
+                        log.info("用户：{},删除了文件：{}", ComponentUtil.getCurrentUserName(),file.getCurrentPath());
                         win.close();
                         Notification.show("提示：", "删除成功", Notification.Type.WARNING_MESSAGE);
-                        initGridContent(file.getCurrentPath());
+                        initGridContent(file.getParentPath());
                     } catch (IOException ex) {
                         log.error("删除文件错误" + ExceptionUtils.getStackTrace(ex));
                     }

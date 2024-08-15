@@ -186,7 +186,8 @@ public class RemoteServerListComponent extends CommonComponent {
 	 * @param data
 	 */
 	private void addRemoteSSHTab(ConnectionInfo data) {
-		RemoteSSHComponent bean = ComponentUtil.applicationContext.getBean(RemoteSSHComponent.class);
+//		RemoteSSHComponent bean = ComponentUtil.applicationContext.getBean(RemoteSSHComponent.class);
+		RemoteSSHComponentV2 bean = ComponentUtil.applicationContext.getBean(RemoteSSHComponentV2.class);
 		bean.setAddr(data);
 		bean.setHostName(data.getIdHost());
 		bean.initLayout();

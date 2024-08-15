@@ -79,14 +79,9 @@ public class LocalFileMgmtComponent extends CommonComponent {
         contentLayout.setExpandRatio(grid, 1);
         grid.setWidthFull();
         grid.setHeightFull();
-        grid.addColumn(RemoteFileInfo::getFileName).setCaption("名称");
-        grid.addColumn(RemoteFileInfo::getPermission).setCaption("权限");
-        grid.addColumn(RemoteFileInfo::getUserName).setCaption("用户");
-        grid.addColumn(RemoteFileInfo::getSize).setCaption("大小");
-        grid.addColumn(RemoteFileInfo::getLastModify).setCaption("修改时间");
-        grid.addComponentColumn(file -> {
+        grid.addComponentColumn(file ->{
             if (!file.getIsFile()) {
-                Button b = ComponentFactory.getLinkButton("进入");
+                Button b = ComponentFactory.getLinkButton(file.getFileName());
                 b.addClickListener(e -> {
                     initGridContent(file.getCurrentPath());
                     pathList.add(file.getCurrentPath());
@@ -94,8 +89,25 @@ public class LocalFileMgmtComponent extends CommonComponent {
                 });
                 return b;
             }
-            return null;
-        }).setCaption("打开");
+            return ComponentFactory.getStandardLabel(file.getFileName());
+        }).setCaption("名称");
+        grid.addColumn(RemoteFileInfo::getFileName).setCaption("名称");
+        grid.addColumn(RemoteFileInfo::getPermission).setCaption("权限");
+        grid.addColumn(RemoteFileInfo::getUserName).setCaption("用户");
+        grid.addColumn(RemoteFileInfo::getSize).setCaption("大小");
+        grid.addColumn(RemoteFileInfo::getLastModify).setCaption("修改时间");
+//        grid.addComponentColumn(file -> {
+//            if (!file.getIsFile()) {
+//                Button b = ComponentFactory.getLinkButton("进入");
+//                b.addClickListener(e -> {
+//                    initGridContent(file.getCurrentPath());
+//                    pathList.add(file.getCurrentPath());
+//                    pathLb.setValue(file.getCurrentPath());
+//                });
+//                return b;
+//            }
+//            return null;
+//        }).setCaption("打开");
         grid.addComponentColumn(file -> {
             if (!file.getIsFile()) {
                 FileUploader loader = new FileUploader();

@@ -95,7 +95,7 @@ public class SSHClientUtil {
             try (Session.Command cmd = startSession.exec(command)) {
                 String output = IOUtils.readFully(cmd.getInputStream()).toString(); // 读取命令输出
                 cmd.join(5, TimeUnit.SECONDS); // 等待命令执行完成
-                log.info("Executed command: {}. Output: {}", command, output);
+//                log.info("Executed command: {}. Output: {}", command, output);
                 return output;
             }
         }
