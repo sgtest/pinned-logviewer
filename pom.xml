@@ -201,11 +201,18 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-support</artifactId>
 		</dependency>
+<!--		<dependency>-->
+<!--			<groupId>com.jcraft</groupId>-->
+<!--			<artifactId>jsch</artifactId>-->
+<!--			<version>0.1.55</version>-->
+<!--		</dependency>-->
+		<!-- https://mvnrepository.com/artifact/com.github.mwiede/jsch -->
 		<dependency>
-			<groupId>com.jcraft</groupId>
+			<groupId>com.github.mwiede</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.1.55</version>
+			<version>0.2.17</version>
 		</dependency>
+
 
 		<dependency>
 			<groupId>com.hierynomus</groupId>
