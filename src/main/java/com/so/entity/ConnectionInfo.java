@@ -10,6 +10,7 @@ public class ConnectionInfo {
 	private String cdPassword;
 	private String cdKeyPath;
 	private String cdLogpath;
+	private String desc;
 	
 	
 	
@@ -20,6 +21,26 @@ public class ConnectionInfo {
 		this.idUser = idUser;
 		this.cdPassword = cdPassword;
 		this.cdKeyPath = cdKeyPath;
+	}
+
+	public ConnectionInfo(String idHost, String cdPort, String idUser, String cdPassword, String cdKeyPath,String desc) {
+		super();
+		this.idHost = idHost;
+		this.cdPort = cdPort;
+		this.idUser = idUser;
+		this.cdPassword = cdPassword;
+		this.cdKeyPath = cdKeyPath;
+		this.desc = desc;
+	}
+
+	public ConnectionInfo(String idHost, String cdPort, String idUser, String cdPassword, String cdKeyPath,String cdLogpath,String desc) {
+		super();
+		this.idHost = idHost;
+		this.cdPort = cdPort;
+		this.idUser = idUser;
+		this.cdPassword = cdPassword;
+		this.cdKeyPath = cdKeyPath;
+		this.desc = desc;
 	}
 	public String getIdHost() {
 		return idHost;
@@ -56,6 +77,14 @@ public class ConnectionInfo {
 	}
 	public void setCdLogpath(String cdLogpath) {
 		this.cdLogpath = cdLogpath;
+	}
+
+	public String getDesc() {
+		return desc;
+	}
+
+	public void setDesc(String desc) {
+		this.desc = desc;
 	}
 
 	@Override

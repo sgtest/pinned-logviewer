@@ -14,13 +14,13 @@ import org.slf4j.LoggerFactory;
 /**
  * ssh tools
  */
-public class JSchUtil {
+public class MyJSchUtil {
 
 	
-	private static final Logger log = LoggerFactory.getLogger(JSchUtil.class);
+	private static final Logger log = LoggerFactory.getLogger(MyJSchUtil.class);
 
     public static final int SESSION_TIMEOUT = 60000;
-    public static final int CONNECT_TIMEOUT = 3000;
+    public static final int CONNECT_TIMEOUT = 500;
 
     /**
      * get session
@@ -398,6 +398,46 @@ public class JSchUtil {
         } finally {
             closeInputStream(in);
             disconnect(channel);
+        }
+    }
+
+    public static boolean uploadFile(ChannelSftp channelSftp, InputStream in, String directory, String fileName) {
+        log.info(">>>>>>>>uploadFile--ftp start>>>>>>>>>>>>>");
+        try {
+//            channelSftp.connect(CONNECT_TIMEOUT);
+            String[] folders = directory.split("/");
+            try {
+                for (int i = 0; i < folders.length; i++) {
+                    if (i == 0 && folders[i].length() == 0) {
+                        channelSftp.cd("/");
+                    } else if (folders[i].length() > 0) {
+                        try {
+                            channelSftp.cd(folders[i]);
+                        } catch (SftpException e) {
+                            channelSftp.mkdir(folders[i]);
+                            channelSftp.cd(folders[i]);
+                        }
+                    }
+                }
+            } catch (SftpException e) {
+                log.error("ftp create file fail" + directory, e);
+                return false;
+            }
+
+            try {
+                channelSftp.put(in, fileName);
+            } catch (SftpException e) {
+                log.error("sftp error-->" + e.getMessage(), e);
+                return false;
+            }
+
+            log.info(">>>>>>>>uploadFile--ftp upload end>>>>>>>>>>>>>");
+            log.info(">>>>>>>>ftp upload dir：{}，filename：{}>>>>>>>>>>>>>", directory, fileName);
+
+            return true;
+        } finally {
+            closeInputStream(in);
+//            disconnect(channelSftp);
         }
     }
     

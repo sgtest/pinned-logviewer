@@ -1,10 +1,6 @@
 package com.so.component.remote;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Spliterator;
 
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.so.ui.LoginView;
@@ -22,22 +18,15 @@ import org.springframework.stereotype.Service;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.jcraft.jsch.Session;
 import com.so.ui.ComponentFactory;
-import com.so.util.JSchUtil;
-import com.so.util.Util;
+import com.so.util.MyJSchUtil;
 import com.so.component.CommonComponent;
 import com.so.component.util.ConfirmationDialogPopupWindow;
 import com.so.component.util.ConfirmationEvent;
 import com.so.component.util.ConfirmationEventListener;
 import com.so.component.util.FileUploader;
 import com.so.entity.ConnectionInfo;
-import com.so.entity.ProjectList;
 import com.so.entity.CommonProjectMgmt;
 import com.so.mapper.CommonProjectMgmtMapper;
-import com.so.mapper.ProjectsMapper;
-import com.so.mapper.TomcatInfoMapper;
-import com.vaadin.server.Extension;
-import com.vaadin.ui.Grid.Column;
-import com.vaadin.ui.Notification.Type;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -109,7 +98,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 				try {
 					if (StrUtil.isNotBlank(p.getCdPath())) {
 						log.info("脚本启动路径："+p.getCdPath());
-						List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd " + p.getCdPath()+";"+p.getCmdStart());
+						List<String> executeNewFlow = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd " + p.getCdPath()+";"+p.getCmdStart());
 						log.info(executeNewFlow.toString());
 					}
 				} catch (Exception e1) {
@@ -127,7 +116,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 				try {
 					if (StrUtil.isNotBlank(p.getCdPath())) {
 						log.info("应用停止路径："+p.getCdPath());
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdStop());
+						List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdStop());
 						log.info(remoteExecute.toString());
 					}
 				} catch (Exception e1) {
@@ -145,7 +134,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 				try {
 					if (StrUtil.isNotBlank(p.getCdPath())) {
 						log.info("应用重启路径："+p.getCdPath());
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRestart());
+						List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRestart());
 						log.info(remoteExecute.toString());
 					}else{
 						Notification.show("未配置重启命令，无法执行！", Notification.Type.WARNING_MESSAGE);
@@ -165,7 +154,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 			b.addClickListener(e -> {
 				try {
 					if (StrUtil.isNotBlank(p.getCdPath())) {
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRefresh());
+						List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getCdPath()+";"+p.getCmdRefresh());
 						log.info(remoteExecute.toString());
 					}else{
 						Notification.show("未配置刷新命令，无法执行！", Notification.Type.WARNING_MESSAGE);
@@ -186,7 +175,7 @@ public class CommonProjecttMgmtComponent extends CommonComponent {
 				try {
 					// boolean runningStasus = Util.getRunningStasus("sh server.sh status " + p.getNameProject(), p.getCdParentPath());
 					if (StrUtil.isNotEmpty(p.getCmdStatus())){
-						List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,p.getCmdStatus());
+						List<String> executeNewFlow = MyJSchUtil.remoteExecute(jschSession,p.getCmdStatus());
 						boolean falg = false;
 						for (String res : executeNewFlow) {
 							if (res.contains(p.getCmdStatusSuccessKey())) {

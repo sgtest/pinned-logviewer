@@ -43,17 +43,18 @@ DROP TABLE IF EXISTS "connection_info";
 CREATE TABLE "connection_info" (
                                    "id_host" TEXT NOT NULL,
                                    "cd_port" TEXT NOT NULL,
-                                   "id_user" TEXT,
+                                   "id_user" TEXT NOT NULL,
                                    "cd_password" TEXT,
                                    "cd_key_path" TEXT,
                                    "cd_logpath" TEXT,
-                                   PRIMARY KEY ("id_host", "cd_port")
+                                   "desc" TEXT,
+                                   PRIMARY KEY ("id_host", "cd_port", "id_user")
 );
 
 -- ----------------------------
 -- Records of connection_info
 -- ----------------------------
-INSERT INTO "connection_info" VALUES ('192.168.190.100', '22', 'root', 'test', NULL, NULL);
+INSERT INTO "connection_info" VALUES ('192.168.190.100', '22', 'root', 'test', NULL, NULL,'测试');
 
 -- ----------------------------
 -- Table structure for log_path

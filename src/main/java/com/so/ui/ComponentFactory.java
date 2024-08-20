@@ -1,36 +1,24 @@
 package com.so.ui;
 
 import java.util.List;
+import java.util.Set;
 
+import cn.hutool.core.util.StrUtil;
 import com.so.component.util.ButtonType;
 import com.so.component.util.ColorEnum;
+import com.so.entity.User;
+import com.so.util.Constants;
+import com.so.util.Util;
 import com.vaadin.addon.charts.model.DashStyle;
 import com.vaadin.addon.charts.model.XAxis;
 import com.vaadin.addon.charts.model.YAxis;
 import com.vaadin.addon.charts.model.style.Color;
 import com.vaadin.addon.charts.model.style.SolidColor;
 import com.vaadin.server.ThemeResource;
-import com.vaadin.ui.AbsoluteLayout;
-import com.vaadin.ui.Button;
+import com.vaadin.ui.*;
 import com.vaadin.ui.Button.ClickListener;
-import com.vaadin.ui.CheckBox;
-import com.vaadin.ui.CheckBoxGroup;
-import com.vaadin.ui.ComboBox;
-import com.vaadin.ui.DateField;
-import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
-import com.vaadin.ui.HorizontalLayout;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.NativeButton;
-import com.vaadin.ui.Panel;
-import com.vaadin.ui.PasswordField;
-import com.vaadin.ui.RadioButtonGroup;
-import com.vaadin.ui.TabSheet;
-import com.vaadin.ui.TextArea;
-import com.vaadin.ui.TextField;
-import com.vaadin.ui.Upload;
 import com.vaadin.ui.Upload.Receiver;
-import com.vaadin.ui.VerticalLayout;
 import com.vaadin.ui.themes.ValoTheme;
 import org.vaadin.addons.ComboBoxMultiselect;
 
@@ -97,6 +85,14 @@ public class ComponentFactory {
 		HorizontalLayout absoluteLayout=new HorizontalLayout();
 		absoluteLayout.setHeight("40px");
 		absoluteLayout.setWidth("100%");
+		return absoluteLayout;
+	}
+
+	public static HorizontalLayout  getHorizontalLayoutRight(){
+		HorizontalLayout absoluteLayout=new HorizontalLayout();
+		absoluteLayout.setHeight("40px");
+		absoluteLayout.setWidth("100%");
+		absoluteLayout.setDefaultComponentAlignment(Alignment.MIDDLE_RIGHT);
 		return absoluteLayout;
 	}
 	
@@ -552,6 +548,7 @@ public class ComponentFactory {
 		com.addStyleName("field_box_standard_height");
 		return com;
 	}
+
 }
 
 	
