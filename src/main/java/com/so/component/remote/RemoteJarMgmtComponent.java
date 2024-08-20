@@ -26,7 +26,7 @@ import com.so.entity.ConnectionInfo;
 import com.so.entity.ProjectList;
 import com.so.mapper.ProjectsMapper;
 import com.so.ui.ComponentFactory;
-import com.so.util.JSchUtil;
+import com.so.util.MyJSchUtil;
 
 import cn.hutool.core.util.StrUtil;
 
@@ -132,7 +132,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() + " " + p.getNameProject() +  " " +p.getJarParam() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
-										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
+										List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
 										log.error(ExceptionUtils.getStackTrace(e));
@@ -142,7 +142,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 									String cmd = "source /etc/profile;nohup java -jar "+p.getJvmParam().trim() +  " " +p.getNameProject() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
-										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
+										List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
 										log.error(ExceptionUtils.getStackTrace(e));
@@ -153,7 +153,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 									String cmd = "source /etc/profile;nohup java -jar "+ p.getNameProject().trim() +" 2>&1 > app.log &";
 									log.info("执行命令："+cmd);
 									try {
-										List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
+										List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "cd " + p.getCdParentPath()+";"+cmd);
 										log.info(remoteExecute.toString());
 									} catch (JSchException e) {
 										log.error(ExceptionUtils.getStackTrace(e));
@@ -168,7 +168,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 							@Override
 							public void run() {
 								try {
-									List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";"+p.getCdCommand());
+									List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";"+p.getCdCommand());
 //									log.info(remoteExecute.toString());
 								} catch (JSchException e) {
 									log.error(ExceptionUtils.getStackTrace(e));
@@ -184,7 +184,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 							public void run() {
 								try {
 									//不加source /etc/profile就会报java找到不到命令
-									List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+
+									List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+
 											";chmod 777 server.sh;sh server.sh start "+p.getNameProject());
 									log.info(remoteExecute.toString());
 								} catch (JSchException e2) {
@@ -209,7 +209,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 				try {
 					// Util.executeSellScript("sh server.sh stop " + p.getNameProject(), p.getCdParentPath());
 					try {
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";kill -9 `ps -ef | grep " + p.getNameProject() + " | grep -v grep | awk '{print $2}'`");
+						List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";kill -9 `ps -ef | grep " + p.getNameProject() + " | grep -v grep | awk '{print $2}'`");
 						log.info(remoteExecute.toString());
 					} catch (JSchException e1) {
 						e1.printStackTrace();
@@ -229,7 +229,7 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			b.addClickListener(e -> {
 				try {
 					// boolean runningStasus = Util.getRunningStasus("sh server.sh status " + p.getNameProject(), p.getCdParentPath());
-					List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";ps -ef | grep java");
+					List<String> executeNewFlow = MyJSchUtil.remoteExecute(jschSession, "source /etc/profile;cd " + p.getCdParentPath()+";ps -ef | grep java");
 //					List<String> executeNewFlow = Util.executeNewFlow(Arrays.asList("cd " + p.getCdParentPath(), "ps -ef | grep java"));
 					boolean falg = false;
 					for (String res : executeNewFlow) {

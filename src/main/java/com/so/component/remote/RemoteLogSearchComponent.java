@@ -14,7 +14,7 @@ import com.jcraft.jsch.*;
 import com.so.component.CommonComponent;
 import com.so.entity.LogPath;
 import com.so.mapper.LogPathMapper;
-import com.so.util.JSchUtil;
+import com.so.util.MyJSchUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +40,6 @@ import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
 
 import cn.hutool.core.util.NumberUtil;
-import cn.hutool.extra.ssh.JschUtil;
 
 /**
  * 远程自动登录后跳转的搜索日志页面
@@ -227,7 +226,7 @@ public class RemoteLogSearchComponent extends CommonComponent {
 	private void readLogFile() {
 		if (null == channel){
 			try {
-				channel = JSchUtil.openSftpChannel(jschSession);
+				channel = MyJSchUtil.openSftpChannel(jschSession);
 				channel.connect();
 			} catch (JSchException e) {
 				throw new RuntimeException(e);

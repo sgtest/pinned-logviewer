@@ -1,5 +1,6 @@
 package com.so.component.remote;
 
+import cn.hutool.core.util.StrUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.so.component.CommonComponent;
 import com.so.component.ComponentUtil;
@@ -127,12 +128,14 @@ public class RemoteServerListComponent extends CommonComponent {
 			monitorBtn.addClickListener(e ->{
 				addMonitorTab(info);
 			});
+			Label descLb = ComponentFactory.getStandardLabel("用户："+info.getIdUser()+"|"+(info.getDesc() == null ? "":info.getDesc()));
 			abs.addComponent(serverLb);
 			abs.addComponent(manageBtn,"left:155px;");
 			abs.addComponent(sshBtn,"left:300px;");
 			abs.addComponent(fileBtn,"left:440px;");
 			abs.addComponent(monitorBtn,"left:578px;");
 			abs.addComponent(deleteBtn,"left:710px;");
+			abs.addComponent(descLb,"left:810px;");
 			if (i == serverListFromDb.size()-1) {
 				serverLayout.setExpandRatio(abs, 1);
 			}
@@ -160,6 +163,8 @@ public class RemoteServerListComponent extends CommonComponent {
 			}
 			win.close();
 			initMainLayout();
+			initContent();
+			registerHandler();
 		});
 		absoluteLayout.addComponent(standardLabel,"left:35%;top:18%;");
 		absoluteLayout.addComponent(button,"right:10%;bottom:10px;");
@@ -251,23 +256,25 @@ public class RemoteServerListComponent extends CommonComponent {
 			super(title); // Set window caption
 			center();
 			setClosable(true);
-			setHeight("400px");
+			setHeight("450px");
 			setWidth("370px");
 
 			VerticalLayout ver = new VerticalLayout();
 			ver.setSizeFull();
 			FormLayout lay = new FormLayout();
-			lay.setHeight("230px");
+			lay.setHeight("270px");
 			host = ComponentFactory.getStandardTtextField("主机：");
 			port = new TextField("端口：");
 			port.setValue("22");
 			usernameField = ComponentFactory.getStandardTtextField("用户名：");
 
 			passField = ComponentFactory.getStandardPassedwordField("密码：");
+			TextField desc = ComponentFactory.getStandardTtextField("备注");
 			lay.addComponent(host);
 			lay.addComponent(port);
 			lay.addComponent(usernameField);
 			lay.addComponent(passField);
+			lay.addComponent(desc);
 			ver.addComponent(lay);
 			AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
 			abs.setHeight("100px");
@@ -280,6 +287,10 @@ public class RemoteServerListComponent extends CommonComponent {
 					Integer sshPort = Integer.valueOf(port.getValue());
 					String userName = usernameField.getValue();
 					String password = passField.getValue();
+					if (StrUtil.isNotEmpty(desc.getValue()) && desc.getValue().length()>30){
+						Notification.show("备注最多写30个字", Notification.Type.ERROR_MESSAGE);
+						return;
+					}
 					try {
 						if (null != loader.getFile()) {
 							//上传了秘钥
@@ -303,7 +314,7 @@ public class RemoteServerListComponent extends CommonComponent {
 					// 如果连接成功保存用户的配置
 //					1saveUserConfig(host.getValue(), Integer.valueOf(port.getValue()), usernameField.getValue(), passField.getValue());
 					try {
-						connectionInfoMapper.insert(new ConnectionInfo(host.getValue(), port.getValue(), usernameField.getValue(), passField.getValue(), loader.getKeypath()));
+						connectionInfoMapper.insert(new ConnectionInfo(host.getValue(), port.getValue(), usernameField.getValue(), passField.getValue(), loader.getKeypath(),desc.getValue()));
 					} catch (Exception e1) {
 						Notification.show("链接信息已经存在！", Notification.Type.WARNING_MESSAGE);
 						return;

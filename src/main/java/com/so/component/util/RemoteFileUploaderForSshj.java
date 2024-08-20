@@ -1,7 +1,7 @@
 package com.so.component.util;
 
-import com.so.entity.ConnectionInfo;
-import com.so.util.SSHClientUtil;
+import com.jcraft.jsch.ChannelSftp;
+import com.so.util.MyJSchUtil;
 import com.vaadin.ui.Notification;
 import com.vaadin.ui.Upload.*;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -19,7 +19,7 @@ public class RemoteFileUploaderForSshj implements Receiver, SucceededListener, F
     private String localPath;
     private String parentPath;
     private static volatile boolean uploadLocalEnd = false;
-    private SSHClientUtil session;
+    private ChannelSftp channelSftp;
 
     private static final Logger log = LoggerFactory.getLogger(RemoteFileUploaderForSshj.class);
 
@@ -59,9 +59,7 @@ public class RemoteFileUploaderForSshj implements Receiver, SucceededListener, F
                 FileInputStream in = null;
                 try {
                     in = new FileInputStream(file);
-//                        JSchUtil.uploadFile(session, in, parentPath, file.getName());
-                    File localFile = new File(localPath);
-                    session.uploadFile(localPath, parentPath, localFile.hashCode()+"");
+                    MyJSchUtil.uploadFile(channelSftp, in, parentPath, file.getName());
                     log.info("远程文件上传成功=====");
                     Notification.show("提示：", "上传文件成功", Notification.Type.WARNING_MESSAGE);
                 } catch (Exception e) {
@@ -111,8 +109,11 @@ public class RemoteFileUploaderForSshj implements Receiver, SucceededListener, F
         this.parentPath = parentPath;
     }
 
-    public void setSession(SSHClientUtil session) {
-        this.session = session;
+    public ChannelSftp getChannelSftp() {
+        return channelSftp;
     }
 
+    public void setChannelSftp(ChannelSftp channelSftp) {
+        this.channelSftp = channelSftp;
+    }
 }

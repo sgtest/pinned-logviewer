@@ -90,4 +90,19 @@ public class RemoteFileInfo {
     public void setParentPath(String parentPath) {
         this.parentPath = parentPath;
     }
+
+    @Override
+    public String toString() {
+        return "RemoteFileInfo{" +
+                "fileName='" + fileName + '\'' +
+                ", permission='" + permission + '\'' +
+                ", userName='" + userName + '\'' +
+                ", userGroup='" + userGroup + '\'' +
+                ", size='" + size + '\'' +
+                ", lastModify='" + lastModify + '\'' +
+                ", parentPath='" + parentPath + '\'' +
+                ", currentPath='" + currentPath + '\'' +
+                ", isFile=" + isFile +
+                '}';
+    }
 }

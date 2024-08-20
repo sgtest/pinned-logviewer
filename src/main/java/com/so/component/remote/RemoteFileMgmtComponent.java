@@ -1,7 +1,9 @@
 package com.so.component.remote;
 
-import cn.hutool.core.date.DateUnit;
+import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.date.DateUtil;
+import cn.hutool.core.util.NumberUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.extra.ssh.JschUtil;
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
@@ -10,6 +12,7 @@ import com.jcraft.jsch.SftpException;
 import com.so.component.CommonComponent;
 import com.so.component.ComponentUtil;
 import com.so.component.util.ColorEnum;
+import com.so.component.util.CommonWindow;
 import com.so.component.util.ConfirmationDialogPopupWindow;
 import com.so.component.util.RemoteFileUploaderForSshj;
 import com.so.entity.ConnectionInfo;
@@ -17,13 +20,13 @@ import com.so.entity.RemoteFileInfo;
 import com.so.ui.ComponentFactory;
 import com.so.ui.LoginView;
 import com.so.util.Constants;
-import com.so.util.JSchUtil;
+import com.so.util.MyJSchUtil;
 import com.so.util.SSHClientUtil;
 import com.vaadin.icons.VaadinIcons;
 import com.vaadin.server.FileDownloader;
 import com.vaadin.server.StreamResource;
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.*;
-import net.schmizz.sshj.sftp.RemoteResourceInfo;
 import net.schmizz.sshj.xfer.FilePermission;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -31,7 +34,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
@@ -53,9 +55,14 @@ public class RemoteFileMgmtComponent extends CommonComponent {
     private Grid<RemoteFileInfo> grid;
     private Button backBtn;
     private Label pathLb;
-    private SSHClientUtil clientUtil;
     private Session jschSession;
+    private ChannelSftp channelSftp;
     private LinkedList<String> pathList = new LinkedList();
+    private Button batchRemoveBtn;
+    private Button batchMoveBtn;
+    private Button createDirBtn;
+    private SSHClientUtil clientUtil;
+    private Button createFileBtn;
 
     @Override
     public void initLayout() {
@@ -65,21 +72,33 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         mainPanel.setContent(contentLayout);
         contentLayout.setWidth("100%");
         contentLayout.setHeight("700px");
+        readyToConnect();
         initMainLayout();
 //        加载目录
         initGridContent(null);
-        readyToConnect();
     }
 
     private void initMainLayout() {
         HorizontalLayout horizontalLayout = ComponentFactory.getHorizontalLayout();
+        HorizontalLayout batchLayout = ComponentFactory.getHorizontalLayoutRight();
         horizontalLayout.setDefaultComponentAlignment(Alignment.MIDDLE_LEFT);
         backBtn = ComponentFactory.getImageButton();
         backBtn.setIcon(VaadinIcons.BACKSPACE);
         horizontalLayout.addComponent(backBtn);
         pathLb = ComponentFactory.getStandardLabel("");
         horizontalLayout.addComponent(pathLb);
-        horizontalLayout.setExpandRatio(pathLb, 1);
+        batchMoveBtn = ComponentFactory.getStandardButton("批量移动");
+        batchRemoveBtn = ComponentFactory.getButtonWithColor("批量删除", ColorEnum.RED);
+        createDirBtn = ComponentFactory.getStandardButton("创建目录");
+        createFileBtn = ComponentFactory.getStandardButton("创建文件");
+        batchLayout.addComponent(batchMoveBtn);
+        batchLayout.addComponent(batchRemoveBtn);
+        batchLayout.addComponent(createDirBtn);
+        batchLayout.addComponent(createFileBtn);
+        batchLayout.setExpandRatio(batchMoveBtn, 1);
+        horizontalLayout.addComponent(batchLayout);
+        horizontalLayout.setComponentAlignment(batchLayout, Alignment.MIDDLE_RIGHT);
+        horizontalLayout.setExpandRatio(batchLayout, 1);
         contentLayout.addComponent(horizontalLayout);
 
         grid = new Grid<RemoteFileInfo>();
@@ -87,7 +106,8 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         contentLayout.setExpandRatio(grid, 1);
         grid.setWidthFull();
         grid.setHeightFull();
-        grid.addComponentColumn(file ->{
+        grid.setSelectionMode(Grid.SelectionMode.MULTI);
+        grid.addComponentColumn(file -> {
             if (!file.getIsFile()) {
                 Button b = ComponentFactory.getLinkButton(file.getFileName());
                 b.addClickListener(e -> {
@@ -119,7 +139,7 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         grid.addComponentColumn(file -> {
             if (!file.getIsFile()) {
                 RemoteFileUploaderForSshj loader = new RemoteFileUploaderForSshj();
-                loader.setSession(clientUtil);
+                loader.setChannelSftp(channelSftp);
                 loader.setParentPath(file.getCurrentPath());
                 Upload upload = new Upload("上传", loader);
                 upload.setImmediateMode(true);
@@ -148,27 +168,28 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         grid.addComponentColumn(file -> {
             Button deleteBtn = ComponentFactory.getButtonWithColor("删除", ColorEnum.RED);
             deleteBtn.addClickListener(e -> {
-                ConfirmationDialogPopupWindow win = new ConfirmationDialogPopupWindow("确认", "确认是否删除！", "确认", "取消", true);
+                ConfirmationDialogPopupWindow win = new ConfirmationDialogPopupWindow("确认", "危险操作！确认是否删除！", "确认", "取消", true);
                 win.getYesButton().addClickListener(c -> {
                     try {
-                        if (!LoginView.checkPermission(Constants.DELETE)){
+                        if (!LoginView.checkPermission(Constants.DELETE)) {
                             Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
                             return;
                         }
                         if (file.getIsFile()) {
-                            clientUtil.getSftpClient().rm(file.getCurrentPath());
+                            channelSftp.rm(file.getCurrentPath());
                         } else {
-                            Notification.show("提示：", "为安全起见，暂不支持删除目录", Notification.Type.WARNING_MESSAGE);
-//                            clientUtil.getSftpClient().rmdir(file.getCurrentPath());
+//                            Notification.show("提示：", "为安全起见，暂不支持删除目录", Notification.Type.WARNING_MESSAGE);
+                            channelSftp.rmdir(file.getCurrentPath());
                             win.close();
                             return;
                         }
-                        log.info("用户：{},删除了文件：{}", ComponentUtil.getCurrentUserName(),file.getCurrentPath());
+                        log.info("用户：{},删除了文件：{}", ComponentUtil.getCurrentUserName(), file.getCurrentPath());
                         win.close();
                         Notification.show("提示：", "删除成功", Notification.Type.WARNING_MESSAGE);
                         initGridContent(file.getParentPath());
-                    } catch (IOException ex) {
+                    } catch (SftpException ex) {
                         log.error("删除文件错误" + ExceptionUtils.getStackTrace(ex));
+                        Notification.show("提示：", "删除失败，请查看日志", Notification.Type.WARNING_MESSAGE);
                     }
                 });
                 win.showConfirmation();
@@ -179,63 +200,92 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
     private void initGridContent(String path) {
         //创建链接获取用户目录列表
+        String currentParentPath = null;
         try {
-            if (null == clientUtil) {
-                clientUtil = new SSHClientUtil(addr.getIdHost(), Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdPassword());
-                clientUtil.openConnection();
-            }
-        } catch (IOException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
-            Notification.show("链接当前机器失败，请检查该IP：" + addr.getIdHost(), Notification.Type.ERROR_MESSAGE);
-            return;
-        }
-        try {
-            List<RemoteResourceInfo> remoteResourceInfos = null;
+            Vector<ChannelSftp.LsEntry> remoteResourceInfos = null;
             if (null == path) {
                 pathList.add("/");
                 if ("root".equals(addr.getIdUser())) {
-                    remoteResourceInfos = clientUtil.listFiles("/root");
+                    remoteResourceInfos = channelSftp.ls("/root");
                     pathList.add("/root");
                     pathLb.setValue("/root");
                 } else {
-                    remoteResourceInfos = clientUtil.listFiles("/home/" + addr.getIdUser());
+                    remoteResourceInfos = channelSftp.ls("/home/" + addr.getIdUser());
                     pathList.add("/home/" + addr.getIdUser());
                     pathLb.setValue("/home/" + addr.getIdUser());
                 }
+                currentParentPath = pathLb.getValue();
             } else {//多次点击目录
-                remoteResourceInfos = clientUtil.listFiles(path);
+                try {
+                    remoteResourceInfos = channelSftp.ls(path);
+                    currentParentPath = path;
+                } catch (Exception e) {
+                    log.error(ExceptionUtils.getStackTrace(e));
+                    if (e.getMessage().contains("Permission denied")){
+                        Notification.show("权限不足", Notification.Type.ERROR_MESSAGE);
+                    }
+                }
             }
-            List<RemoteFileInfo> infos = convertRemoteFileInfo(remoteResourceInfos);
+            List<RemoteFileInfo> infos = convertRemoteFileInfo(remoteResourceInfos,currentParentPath);
             grid.setItems(infos);
-        } catch (IOException e) {
+        } catch (SftpException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Notification.show("获取目录数据错误，请及时查看日志！：" + addr.getIdHost(), Notification.Type.ERROR_MESSAGE);
         }
     }
 
-    private List<RemoteFileInfo> convertRemoteFileInfo(List<RemoteResourceInfo> remoteResourceInfos) {
+    private List<RemoteFileInfo> convertRemoteFileInfo(Vector<ChannelSftp.LsEntry> remoteResourceInfos,String parentPath) {
         List<RemoteFileInfo> fileInfos = new ArrayList<>();
-        for (RemoteResourceInfo in : remoteResourceInfos) {
-            if (!in.getName().startsWith(".")) {
+        for (ChannelSftp.LsEntry in : remoteResourceInfos) {
+            if (!in.getFilename().startsWith(".")) {
                 RemoteFileInfo fileInfo = new RemoteFileInfo();
-                fileInfo.setFileName(in.getName());
-            Set<FilePermission> permissions = in.getAttributes().getPermissions();
-                String perm = getPermissionString(permissions);
-                fileInfo.setPermission(perm);
-                fileInfo.setLastModify(DateUtil.format(new Date(in.getAttributes().getAtime()*1000),"yyyy-MM-dd HH:mm:ss"));
-                if (in.getAttributes().getSize() <= 1024) {
-                    fileInfo.setSize(in.getAttributes().getSize() + "b");
-                } else if (in.getAttributes().getSize() < 1024 * 1024) {
-                    fileInfo.setSize(in.getAttributes().getSize() / 1024 + "kb");
-                } else if (in.getAttributes().getSize() < 1024 * 1024 * 1024) {
-                    fileInfo.setSize(in.getAttributes().getSize() / 1024 / 1024 + "mb");
+                fileInfo.setFileName(in.getFilename());
+                String permissionsString = in.getAttrs().getPermissionsString();
+//                String perm = getPermissionString(permissions);
+                fileInfo.setPermission(permissionsString);
+                fileInfo.setLastModify(DateUtil.format(new Date(in.getAttrs().getATime() * 1000L), "yyyy-MM-dd HH:mm:ss"));
+                if (in.getAttrs().getSize() <= 1024) {
+                    fileInfo.setSize(in.getAttrs().getSize() + "b");
+                } else if (in.getAttrs().getSize() < 1024 * 1024) {
+                    fileInfo.setSize(in.getAttrs().getSize() / 1024 + "kb");
+                } else if (in.getAttrs().getSize() < 1024 * 1024 * 1024) {
+                    fileInfo.setSize(in.getAttrs().getSize() / 1024 / 1024 + "mb");
                 } else {
-                    fileInfo.setSize(in.getAttributes().getSize() / 1024 / 1024 / 1024 + "Gb");
+                    fileInfo.setSize(in.getAttrs().getSize() / 1024 / 1024 / 1024 + "Gb");
                 }
-                fileInfo.setUserName(addr.getIdUser());
-                fileInfo.setParentPath(in.getParent());
-                fileInfo.setCurrentDir(in.getPath());
-                fileInfo.setIsFile(!in.getAttributes().getMode().getType().name().contains("DIRECTORY"));
+                String[] s = in.getLongname().split("  ");
+                String user = null;
+                if (StrUtil.isNotEmpty(s[1])){
+                    user = s[1].split(" ")[1];
+                    if (NumberUtil.isNumber(user)){
+                        String[] s1 = s[1].split(" ");
+                        if (s1.length > 2){
+                            user = s1[2];
+                        }else{
+                            log.warn("格式错误{}",Arrays.toString(s1));
+                        }
+                    }
+                }else if(StrUtil.isNotEmpty(s[2])){
+                    user = s[2].split(" ")[1];
+                    if (NumberUtil.isNumber(user)){
+                        String[] s1 = s[2].split(" ");
+                        if (s1.length > 2){
+                            user = s1[2];
+                        }else{
+                            log.warn("格式错误{}", Arrays.toString(s1));
+                        }
+                    }
+                }
+                fileInfo.setUserName(user);
+                fileInfo.setParentPath(parentPath);
+                String currentPath = null;
+                if (parentPath.equals("/")){
+                    currentPath = parentPath + in.getFilename();
+                }else{
+                    currentPath = parentPath + "/" + in.getFilename();
+                }
+                fileInfo.setCurrentDir(currentPath);
+                fileInfo.setIsFile(!in.getAttrs().isDir());
                 fileInfos.add(fileInfo);
             }
         }
@@ -247,21 +297,32 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         List<String> usr = collect1.stream().filter(f -> f.name().startsWith("USR")).map(m -> m.name().split("_")[1]).collect(Collectors.toList());
         List<String> usrGroup = collect1.stream().filter(f -> f.name().startsWith("GRP")).map(m -> m.name().split("_")[1]).collect(Collectors.toList());
         List<String> other = collect1.stream().filter(f -> f.name().startsWith("OTH")).map(m -> m.name().split("_")[1]).collect(Collectors.toList());
-        return usr.toString().replace(",","")+usrGroup.toString().replace(",","")+other.toString().replace(",","");
+        return usr.toString().replace(",", "") + usrGroup.toString().replace(",", "") + other.toString().replace(",", "");
     }
 
     @Override
     public void detach() {
         super.detach();
-        this.clientUtil.closeConnection();
-        if (jschSession != null){
+        if (jschSession != null) {
+            channelSftp.disconnect();
             jschSession.disconnect();
         }
+        clientUtil.closeConnection();
     }
 
     @Override
     public void initContent() {
-
+        //创建链接获取用户目录列表
+        try {
+            if (null == clientUtil) {
+                clientUtil = new SSHClientUtil(addr.getIdHost(), Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdPassword());
+                clientUtil.openConnection();
+            }
+        } catch (IOException e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            Notification.show("链接当前机器失败，请检查该IP：" + addr.getIdHost(), Notification.Type.ERROR_MESSAGE);
+            return;
+        }
     }
 
     @Override
@@ -278,6 +339,155 @@ public class RemoteFileMgmtComponent extends CommonComponent {
                 initGridContent(prePath);
                 pathLb.setValue(prePath);
             }
+        });
+        batchMoveBtn.addClickListener(e -> {
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("移动信息", "370px", "300px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("100px");
+            TextField usernameField = ComponentFactory.getStandardTtextField("移动到：");
+            usernameField.setPlaceholder("填写目标地址的绝对路径");
+            lay.addComponent(usernameField);
+            Button confirmBtn = ComponentFactory.getStandardButton("确定");
+            confirmBtn.addClickListener(e1 -> {
+                if (StrUtil.isNotEmpty(usernameField.getValue())) {
+                    Set<RemoteFileInfo> selectedItems = grid.getSelectedItems();
+                    if (CollectionUtil.isNotEmpty(selectedItems)) {
+                        for (RemoteFileInfo item : selectedItems) {
+                            try {
+                                String cmd = "mv " + item.getCurrentPath() + " " + usernameField.getValue().trim();
+                                String s = clientUtil.executeCommand(cmd);
+                                System.out.println(s);
+                                log.warn(ComponentUtil.getCurrentUserName() +"移动了"+cmd);
+                            } catch (IOException ex) {
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                                log.error("批量移动发生错误");
+                                Notification.show("移动失败", Notification.Type.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                }
+                win.close();
+                initGridContent(pathLb.getValue());
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+
+        batchRemoveBtn.addClickListener(e -> {
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("移动信息", "450px", "300px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("100px");
+            Label usernameField = ComponentFactory.getStandardLabel("<h3>当前操作为危险操作，不可撤销，<br><div> </div>请谨慎确认！！！</h3>");
+            usernameField.setWidth("350px");
+            usernameField.setContentMode(ContentMode.HTML);
+            lay.addComponent(usernameField);
+            Button confirmBtn = ComponentFactory.getStandardButton("确定删除");
+            confirmBtn.addClickListener(e1 -> {
+                if (!LoginView.checkPermission(Constants.DELETE)){
+                    Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+                    return;
+                }
+                    Set<RemoteFileInfo> selectedItems = grid.getSelectedItems();
+                    if (CollectionUtil.isNotEmpty(selectedItems)) {
+                        for (RemoteFileInfo item : selectedItems) {
+                            try {
+                                log.warn(item.toString());
+                                if (item.getIsFile()){
+                                    channelSftp.rm( item.getCurrentPath());
+                                }else{
+                                    channelSftp.rmdir(item.getCurrentPath());
+                                }
+                                log.warn(ComponentUtil.getCurrentUserName() +"删除了"+item.getFileName());
+                            } catch (Exception ex) {
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                                log.error("批量删除发生错误");
+                                Notification.show("删除失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                            }
+                        }
+                    }
+                    win.close();
+                    initGridContent(pathLb.getValue());
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:160px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+
+        createDirBtn.addClickListener(e -> {
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("创建目录"+pathLb.getValue(), "370px", "300px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("100px");
+            TextField usernameField = ComponentFactory.getStandardTtextField("目录名：");
+            lay.addComponent(usernameField);
+            Button confirmBtn = ComponentFactory.getStandardButton("创建");
+            confirmBtn.addClickListener(e1 -> {
+                if (StrUtil.isNotEmpty(usernameField.getValue())) {
+                    try {
+                        String inputPath = usernameField.getValue().trim();
+                        if (pathLb.getValue().equals("/") && inputPath.startsWith("/")){
+                            channelSftp.mkdir(inputPath);
+                        } else  if (pathLb.getValue().equals("/") && !inputPath.startsWith("/")){
+                            channelSftp.mkdir("/" + inputPath);
+                        } else if (inputPath.startsWith("/")){//说明指定了绝对路径，使用绝对路径
+                            channelSftp.mkdir(inputPath);
+                        }else{
+                            channelSftp.mkdir(pathLb.getValue() +"/" + inputPath);
+                        }
+                        initGridContent(pathLb.getValue());
+                        log.warn(ComponentUtil.getCurrentUserName() +"创建了目录："+inputPath);
+                    } catch (SftpException ex) {
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                        log.error("创建目录失败");
+                        Notification.show(ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                    }
+                }
+                win.close();
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+        createFileBtn.addClickListener(e -> {
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("创建文件"+pathLb.getValue(), "370px", "300px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("100px");
+            TextField usernameField = ComponentFactory.getStandardTtextField("文件名：");
+            lay.addComponent(usernameField);
+            Button confirmBtn = ComponentFactory.getStandardButton("创建");
+            confirmBtn.addClickListener(e1 -> {
+                if (StrUtil.isNotEmpty(usernameField.getValue())) {
+                    try {
+                        String inputFilename = usernameField.getValue().trim();
+                        String cmd;
+                        if (inputFilename.startsWith("/")){//说明指定了绝对路径，使用绝对路径
+                            cmd = "touch " + inputFilename;
+                        }else{//在当前目录下创建文件
+                            cmd = "touch " + pathLb.getValue() +"/" + inputFilename;
+                        }
+                        String s = clientUtil.executeCommand(cmd);
+                        System.out.println(s);
+                        log.warn(ComponentUtil.getCurrentUserName() +"创建了文件："+cmd);
+                        initGridContent(pathLb.getValue());
+                    } catch (IOException ex) {
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                        log.error("创建文件失败");
+                        Notification.show("创建失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                    }
+                }
+                win.close();
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
         });
     }
 
@@ -301,7 +511,6 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
         private static final long serialVersionUID = 6327185867459484865L;
         private RemoteFileInfo filePathInfo;
-        private ChannelSftp channel;
 
         public FileStreamResource(RemoteFileInfo filePathInfo) {
             this.filePathInfo = filePathInfo;
@@ -309,20 +518,11 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
         @Override
         public InputStream getStream() {
-            if (null == channel){
-                try {
-                    channel = JSchUtil.openSftpChannel(jschSession);
-                    channel.connect();
-                } catch (JSchException e) {
-                    log.error(ExceptionUtils.getStackTrace(e));
-                    throw new RuntimeException(e);
-                }
-            }
             InputStream inputStream;
             try {
-                inputStream = channel.get(filePathInfo.getCurrentPath());
+                inputStream = channelSftp.get(filePathInfo.getCurrentPath());
                 return inputStream;
-            }catch (SftpException e) {
+            } catch (SftpException e) {
                 log.error("下载文件出现错误");
                 log.error(ExceptionUtils.getStackTrace(e));
             }
@@ -331,29 +531,35 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
     }
 
-    public Session getJschSession() {
-        return jschSession;
-    }
-
-    public void setJschSession(Session jschSession) {
-        this.jschSession = jschSession;
-    }
     private void readyToConnect() {
         try {
             if (addr.getCdKeyPath() == null) {
                 //无秘钥连接
                 jschSession = JschUtil.createSession(hostName, Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdPassword());
-            }else if(addr.getCdKeyPath() != null){
+            } else if (addr.getCdKeyPath() != null) {
                 //秘钥连接
-                jschSession = JschUtil.createSession(hostName, Integer.parseInt(addr.getCdPort()), addr.getIdUser(),addr.getCdKeyPath(),  addr.getCdPassword() == null ?null :addr.getCdPassword().getBytes());
+                jschSession = JschUtil.createSession(hostName, Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdKeyPath(), addr.getCdPassword() == null ? null : addr.getCdPassword().getBytes());
             }
             jschSession.setTimeout(1800);
+            openSftpChannel();
         } catch (NumberFormatException e) {
             Notification.show("连接失败请检查配置", Notification.Type.WARNING_MESSAGE);
-           log.error(ExceptionUtils.getStackTrace(e));
+            log.error(ExceptionUtils.getStackTrace(e));
         } catch (JSchException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             throw new RuntimeException(e);
+        }
+    }
+
+    private void openSftpChannel() {
+        if (null == channelSftp) {
+            try {
+                channelSftp = MyJSchUtil.openSftpChannel(jschSession);
+                channelSftp.connect();
+            } catch (JSchException e) {
+                log.error(ExceptionUtils.getStackTrace(e));
+                throw new RuntimeException(e);
+            }
         }
     }
 }

@@ -1,16 +1,21 @@
 package com.so.component.remote;
 
-import java.io.File;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Spliterator;
-
+import cn.hutool.core.util.StrUtil;
+import cn.hutool.extra.ssh.JschUtil;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
+import com.jcraft.jsch.Session;
+import com.so.component.CommonComponent;
 import com.so.component.util.*;
+import com.so.entity.ConnectionInfo;
+import com.so.entity.TomcatInfoEntity;
+import com.so.mapper.TomcatInfoMapper;
+import com.so.ui.ComponentFactory;
 import com.so.ui.LoginView;
 import com.so.util.Constants;
+import com.so.util.MyJSchUtil;
 import com.vaadin.ui.*;
+import com.vaadin.ui.Notification.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -19,22 +24,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
-import com.jcraft.jsch.Session;
-import com.so.ui.ComponentFactory;
-import com.so.util.JSchUtil;
-import com.so.util.Util;
-import com.so.component.CommonComponent;
-import com.so.entity.ConnectionInfo;
-import com.so.entity.ProjectList;
-import com.so.entity.TomcatInfoEntity;
-import com.so.mapper.ProjectsMapper;
-import com.so.mapper.TomcatInfoMapper;
-import com.vaadin.server.Extension;
-import com.vaadin.ui.Grid.Column;
-import com.vaadin.ui.Notification.Type;
-
-import cn.hutool.core.util.StrUtil;
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 /**
  * 添加项目页面：
@@ -129,12 +121,16 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 				try {
 					if (StrUtil.isNotBlank(p.getTomcatPath())) {
 						log.info("tomcat启动路径："+p.getTomcatPath());
-						List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd " + p.getTomcatPath()+";"+"./bin/startup.sh");
+						List<String> executeNewFlow = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd " + p.getTomcatPath()+";"+"./bin/startup.sh");
 						log.info(executeNewFlow.toString());
 						if (executeNewFlow.toString().contains("started")) {
 							Notification.show("启动成功",Type.WARNING_MESSAGE);
 						}else {
-							Notification.show("启动失败",Type.ERROR_MESSAGE);
+							if (executeNewFlow.toString().contains("Permission")){
+								Notification.show("权限不足，请联系管理员",Type.ERROR_MESSAGE);
+							}else{
+								Notification.show("启动失败",Type.ERROR_MESSAGE);
+							}
 						}
 					} 
 				} catch (Exception e1) {
@@ -152,11 +148,11 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 				try {
 					if (StrUtil.isNotBlank(p.getTomcatPath())) {
 						log.info("tomcat停止路径："+p.getTomcatPath());
-						List<String> remoteExecute = JSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getTomcatPath()+";./bin/shutdown.sh");
+						List<String> remoteExecute = MyJSchUtil.remoteExecute(jschSession,"source /etc/profile;cd "+p.getTomcatPath()+";./bin/shutdown.sh");
 						if (remoteExecute.toString().contains("Neither")) {
-							Notification.show("启动失败",Type.ERROR_MESSAGE);
+							Notification.show("停止失败",Type.ERROR_MESSAGE);
 						}else {
-							Notification.show("启动成功",Type.WARNING_MESSAGE);
+							Notification.show("停止成功",Type.WARNING_MESSAGE);
 						}
 					} 
 				} catch (Exception e1) {
@@ -173,26 +169,25 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 			b.addClickListener(e -> {
 				try {
 					// boolean runningStasus = Util.getRunningStasus("sh server.sh status " + p.getNameProject(), p.getCdParentPath());
-					List<String> executeNewFlow = JSchUtil.remoteExecute(jschSession,"ps -ef | grep java");
+					String res = JschUtil.exec(jschSession, "ps -ef | grep java", StandardCharsets.UTF_8);
+//					List<String> executeNewFlow = MyJSchUtil.remoteExecute(jschSession,"ps -ef | grep java");
 					boolean falg = false;
 					String binPath = StrUtil.removeSuffix(p.getTomcatPath(), "/");
-					for (String res : executeNewFlow) {
 						if (res.contains(binPath)) {
 							b.setStyleName("projectlist-status-running-button");
 							b.setCaption("运行中");
-							Notification.show("服务运行中", Notification.Type.WARNING_MESSAGE);
+							Notification.show("服务运行中", Type.WARNING_MESSAGE);
 							falg = true;
-							break;
-						} 
+						}
 						log.info(res);
-					}
 					if (!falg) {
 						b.setStyleName("projectlist-status-stop-button");
 						b.setCaption("已停止");
-						Notification.show("服务已经停止，请注意查看日志", Notification.Type.WARNING_MESSAGE);
+						Notification.show("服务已经停止", Type.WARNING_MESSAGE);
 					}
 				} catch (Exception e1) {
-					Notification.show("停止服务失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
+					b.setCaption("无法连接");
+					Notification.show("未能查看状态，请注意查看错误日志", Type.WARNING_MESSAGE);
 					e1.printStackTrace();
 					log.error(ExceptionUtils.getStackTrace(e1));
 				}

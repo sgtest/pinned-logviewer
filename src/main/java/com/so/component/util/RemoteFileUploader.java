@@ -22,7 +22,7 @@ import com.so.component.ComponentUtil;
 import com.so.entity.ConnectionInfo;
 import com.so.entity.ProjectList;
 import com.so.mapper.ProjectsMapper;
-import com.so.util.JSchUtil;
+import com.so.util.MyJSchUtil;
 import com.vaadin.ui.Upload.FailedEvent;
 import com.vaadin.ui.Upload.FailedListener;
 import com.vaadin.ui.Upload.Receiver;
@@ -115,8 +115,8 @@ public class RemoteFileUploader implements Receiver, SucceededListener, FailedLi
 								FileInputStream in = null;
 								try {
 									in = new FileInputStream(file);
-									JSchUtil.uploadFile(session, in, parentPath, file.getName());
-									JSchUtil.uploadFile(session,new FileInputStream(new File(System.getProperty("user.dir")+ File.separator + "bin" +File.separator+"server.sh")),parentPath, "server.sh");
+									MyJSchUtil.uploadFile(session, in, parentPath, file.getName());
+									MyJSchUtil.uploadFile(session,new FileInputStream(new File(System.getProperty("user.dir")+ File.separator + "bin" +File.separator+"server.sh")),parentPath, "server.sh");
 //									JSchUtil.uploadFile(session, file, parentPath);
 //									JSchUtil.scpTo2(session, keypath, parentPath);
 									log.info("远程文件上传成功=====");
@@ -151,8 +151,8 @@ public class RemoteFileUploader implements Receiver, SucceededListener, FailedLi
 					FileInputStream in = null;
 					try {
 						in = new FileInputStream(new File(System.getProperty("user.dir")+ File.separator + "bin" +File.separator+"server.sh"));
-						JSchUtil.uploadFile(session,in,parentPath, "server.sh");
-						JSchUtil.remoteExecute(session,"chmod 777 "+parentPath +File.separator+"server.sh");
+						MyJSchUtil.uploadFile(session,in,parentPath, "server.sh");
+						MyJSchUtil.remoteExecute(session,"chmod 777 "+parentPath +File.separator+"server.sh");
 						log.info("远程脚本上传成功=====");
 					} catch (Exception e) {
 						log.info("远程文件上传失败=====");

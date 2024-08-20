@@ -1,53 +1,26 @@
 package com.so.component;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Vector;
 
 import cn.hutool.core.util.StrUtil;
 import com.so.component.util.TabSheetUtil;
-import com.vaadin.event.ShortcutAction;
-import com.vaadin.server.Page;
 import com.vaadin.ui.*;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Service;
 
-import com.jcraft.jsch.Channel;
 import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.ChannelSftp;
-import com.jcraft.jsch.ChannelSftp.LsEntry;
 import com.jcraft.jsch.ChannelShell;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
-import com.jcraft.jsch.SftpATTRS;
-import com.jcraft.jsch.SftpException;
 import com.so.entity.ConnectionInfo;
-import com.so.entity.PathEntityInfo;
 import com.so.ui.ComponentFactory;
-import com.so.ui.HorizontalGroupLayout;
-import com.so.util.JSchUtil;
-import com.so.util.Util;
 import com.vaadin.event.ShortcutListener;
 import com.vaadin.event.ShortcutAction.KeyCode;
-import com.vaadin.server.FileDownloader;
-import com.vaadin.server.StreamResource;
-import com.vaadin.server.StreamResource.StreamSource;
 
-import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.NumberUtil;
 import cn.hutool.extra.ssh.JschUtil;
 
 /**
