@@ -63,6 +63,7 @@ public class RemoteFileMgmtComponent extends CommonComponent {
     private Button createDirBtn;
     private SSHClientUtil clientUtil;
     private Button createFileBtn;
+    private Button uploadFileBtn;
 
     @Override
     public void initLayout() {
@@ -91,10 +92,12 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         batchRemoveBtn = ComponentFactory.getButtonWithColor("批量删除", ColorEnum.RED);
         createDirBtn = ComponentFactory.getStandardButton("创建目录");
         createFileBtn = ComponentFactory.getStandardButton("创建文件");
+        uploadFileBtn = ComponentFactory.getStandardButton("上传文件");
         batchLayout.addComponent(batchMoveBtn);
         batchLayout.addComponent(batchRemoveBtn);
         batchLayout.addComponent(createDirBtn);
         batchLayout.addComponent(createFileBtn);
+        batchLayout.addComponent(uploadFileBtn);
         batchLayout.setExpandRatio(batchMoveBtn, 1);
         horizontalLayout.addComponent(batchLayout);
         horizontalLayout.setComponentAlignment(batchLayout, Alignment.MIDDLE_RIGHT);
@@ -180,8 +183,6 @@ public class RemoteFileMgmtComponent extends CommonComponent {
                         } else {
 //                            Notification.show("提示：", "为安全起见，暂不支持删除目录", Notification.Type.WARNING_MESSAGE);
                             channelSftp.rmdir(file.getCurrentPath());
-                            win.close();
-                            return;
                         }
                         log.info("用户：{},删除了文件：{}", ComponentUtil.getCurrentUserName(), file.getCurrentPath());
                         win.close();
@@ -305,14 +306,12 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         super.detach();
         if (jschSession != null) {
             channelSftp.disconnect();
-            jschSession.disconnect();
         }
         clientUtil.closeConnection();
     }
 
     @Override
     public void initContent() {
-        //创建链接获取用户目录列表
         try {
             if (null == clientUtil) {
                 clientUtil = new SSHClientUtil(addr.getIdHost(), Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdPassword());
@@ -321,7 +320,6 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         } catch (IOException e) {
             log.error(ExceptionUtils.getStackTrace(e));
             Notification.show("链接当前机器失败，请检查该IP：" + addr.getIdHost(), Notification.Type.ERROR_MESSAGE);
-            return;
         }
     }
 
@@ -342,11 +340,12 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         });
         batchMoveBtn.addClickListener(e -> {
             AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
-            CommonWindow win = new CommonWindow("移动信息", "370px", "300px", abs);
+            CommonWindow win = new CommonWindow("移动信息", "500px", "220px", abs);
             abs.setHeightFull();
             FormLayout lay = new FormLayout();
             lay.setHeight("100px");
             TextField usernameField = ComponentFactory.getStandardTtextField("移动到：");
+            usernameField.setWidth("375px");
             usernameField.setPlaceholder("填写目标地址的绝对路径");
             lay.addComponent(usernameField);
             Button confirmBtn = ComponentFactory.getStandardButton("确定");
@@ -377,13 +376,17 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         });
 
         batchRemoveBtn.addClickListener(e -> {
+            if (CollectionUtil.isEmpty(grid.getSelectedItems())){
+                Notification.show("请选择要删除的文件或目录！", Notification.Type.WARNING_MESSAGE);
+                return;
+            }
             AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
-            CommonWindow win = new CommonWindow("移动信息", "450px", "300px", abs);
+            CommonWindow win = new CommonWindow("移动信息", "500px", "270px", abs);
             abs.setHeightFull();
             FormLayout lay = new FormLayout();
             lay.setHeight("100px");
             Label usernameField = ComponentFactory.getStandardLabel("<h3>当前操作为危险操作，不可撤销，<br><div> </div>请谨慎确认！！！</h3>");
-            usernameField.setWidth("350px");
+            usernameField.setWidth("375px");
             usernameField.setContentMode(ContentMode.HTML);
             lay.addComponent(usernameField);
             Button confirmBtn = ComponentFactory.getStandardButton("确定删除");
@@ -404,9 +407,13 @@ public class RemoteFileMgmtComponent extends CommonComponent {
                                 }
                                 log.warn(ComponentUtil.getCurrentUserName() +"删除了"+item.getFileName());
                             } catch (Exception ex) {
-                                log.error(ExceptionUtils.getStackTrace(ex));
                                 log.error("批量删除发生错误");
-                                Notification.show("删除失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                                log.error(ExceptionUtils.getStackTrace(ex));
+                                if (ex.getMessage().contains("Failure")){
+                                    Notification.show("目录不为空，无法删除",Notification.Type.ERROR_MESSAGE);
+                                }else{
+                                    Notification.show("删除失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                                }
                             }
                         }
                     }
@@ -420,11 +427,12 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
         createDirBtn.addClickListener(e -> {
             AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
-            CommonWindow win = new CommonWindow("创建目录"+pathLb.getValue(), "370px", "300px", abs);
+            CommonWindow win = new CommonWindow("创建目录"+pathLb.getValue(), "500px", "220px", abs);
             abs.setHeightFull();
             FormLayout lay = new FormLayout();
             lay.setHeight("100px");
             TextField usernameField = ComponentFactory.getStandardTtextField("目录名：");
+            usernameField.setWidth("375px");
             lay.addComponent(usernameField);
             Button confirmBtn = ComponentFactory.getStandardButton("创建");
             confirmBtn.addClickListener(e1 -> {
@@ -456,11 +464,12 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         });
         createFileBtn.addClickListener(e -> {
             AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
-            CommonWindow win = new CommonWindow("创建文件"+pathLb.getValue(), "370px", "300px", abs);
+            CommonWindow win = new CommonWindow("创建文件"+pathLb.getValue(), "500px", "300px", abs);
             abs.setHeightFull();
             FormLayout lay = new FormLayout();
             lay.setHeight("100px");
             TextField usernameField = ComponentFactory.getStandardTtextField("文件名：");
+            usernameField.setWidth("375px");
             lay.addComponent(usernameField);
             Button confirmBtn = ComponentFactory.getStandardButton("创建");
             confirmBtn.addClickListener(e1 -> {
@@ -487,6 +496,36 @@ public class RemoteFileMgmtComponent extends CommonComponent {
             });
             abs.addComponent(lay,"top:0px;left:20px;");
             abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+        uploadFileBtn.addClickListener(e ->{
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("上传文件到："+pathLb.getValue(), "500px", "300px", abs);
+            abs.setHeightFull();
+            Label usernameField = ComponentFactory.getStandardLabel("上传文件到："+pathLb.getValue()+"目录下");
+            abs.addComponent(usernameField,"left:10px;top:10px;");
+            //添加上传组件
+            RemoteFileUploaderForSshj loader = new RemoteFileUploaderForSshj();
+            loader.setChannelSftp(channelSftp);
+            loader.setParentPath(pathLb.getValue());
+            Upload upload = new Upload("", loader);
+            upload.setImmediateMode(true);
+            upload.addStartedListener(event -> {
+                if (!LoginView.checkPermission(Constants.UPLOAD)) {
+                    Notification.show("权限不足，请联系管理员", Notification.Type.WARNING_MESSAGE);
+                    throw new RuntimeException("权限不足，终止上传");
+                }
+            });
+            upload.addFinishedListener(new Upload.FinishedListener() {
+                @Override
+                public void uploadFinished(Upload.FinishedEvent event) {
+                    win.close();
+                }
+            });
+            upload.setButtonCaption("上传");
+            upload.setHeight("30px");
+            upload.addSucceededListener(loader);
+            abs.addComponent(upload,"top:50px;right:20px;");
             UI.getCurrent().addWindow(win);
         });
     }
@@ -533,10 +572,10 @@ public class RemoteFileMgmtComponent extends CommonComponent {
 
     private void readyToConnect() {
         try {
-            if (addr.getCdKeyPath() == null) {
+            if (addr.getCdKeyPath() == null && null == jschSession) {
                 //无秘钥连接
                 jschSession = JschUtil.createSession(hostName, Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdPassword());
-            } else if (addr.getCdKeyPath() != null) {
+            } else if (addr.getCdKeyPath() != null && null == jschSession) {
                 //秘钥连接
                 jschSession = JschUtil.createSession(hostName, Integer.parseInt(addr.getCdPort()), addr.getIdUser(), addr.getCdKeyPath(), addr.getCdPassword() == null ? null : addr.getCdPassword().getBytes());
             }
@@ -554,12 +593,30 @@ public class RemoteFileMgmtComponent extends CommonComponent {
     private void openSftpChannel() {
         if (null == channelSftp) {
             try {
-                channelSftp = MyJSchUtil.openSftpChannel(jschSession);
-                channelSftp.connect();
+                    channelSftp = MyJSchUtil.openSftpChannel(jschSession);
+                    channelSftp.connect();
             } catch (JSchException e) {
                 log.error(ExceptionUtils.getStackTrace(e));
-                throw new RuntimeException(e);
             }
         }
+    }
+
+    public Session getJschSession() {
+        return jschSession;
+    }
+
+    public void setJschSession(Session jschSession) {
+        this.jschSession = jschSession;
+    }
+
+    public void jumpPath(String path){
+        initGridContent(path);
+        int n = StrUtil.lastIndexOf(path,"/",path.length(),true);
+        String substring1 = path.substring(0, n);
+        if (!substring1.equals("")){
+            pathList.add(substring1);
+        }
+        pathList.add(path);
+        pathLb.setValue(path);
     }
 }

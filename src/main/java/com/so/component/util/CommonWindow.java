@@ -14,8 +14,8 @@ public class CommonWindow extends Window {
 			center();
 			setModal(true);
 			setClosable(true);
-			setHeight("370px");
-			setWidth("370px");
+			setWidth(width);
+			setHeight(height);
 			setContent(layout);
 		}
 	}

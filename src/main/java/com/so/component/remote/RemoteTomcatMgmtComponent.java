@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.jcraft.jsch.Session;
 import com.so.component.CommonComponent;
+import com.so.component.ComponentUtil;
 import com.so.component.util.*;
 import com.so.entity.ConnectionInfo;
 import com.so.entity.TomcatInfoEntity;
@@ -138,7 +139,6 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 					log.error(ExceptionUtils.getStackTrace(e1));
 					Notification.show("启动失败，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 				}
-				Notification.show("命令已经执行，请注意查看日志", Notification.Type.WARNING_MESSAGE);
 			});
 			return b;
 		}).setCaption("启动服务");
@@ -213,12 +213,12 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 							QueryWrapper<TomcatInfoEntity> wrapper2 = new QueryWrapper<>();
 							wrapper2.eq("id_host",addr.getIdHost());
 							grid.setItems(tomcatInfoMapper.selectList(wrapper2));
+							yesNo.close();
 						}
 
 						@Override
 						protected void rejected(ConfirmationEvent event) {
 							super.rejected(event);
-							return;
 						}
 					});
 					yesNo.showConfirmation();
@@ -259,7 +259,22 @@ public class RemoteTomcatMgmtComponent extends CommonComponent {
 			upload.addSucceededListener(loader);
 			return upload;
 		}).setCaption("上传war包");
-
+		grid.addComponentColumn(p ->{
+			Button b = ComponentFactory.getStandardButton("打开目录");
+			b.addClickListener(e -> {
+				RemoteFileMgmtComponent fileMgmtComponent = ComponentUtil.applicationContext.getBean(RemoteFileMgmtComponent.class);
+				fileMgmtComponent.setAddr(addr);
+				fileMgmtComponent.setHostName(addr.getIdHost());
+				fileMgmtComponent.setJschSession(jschSession);
+				fileMgmtComponent.initLayout();
+				fileMgmtComponent.initContent();
+				fileMgmtComponent.registerHandler();
+				fileMgmtComponent.jumpPath(p.getTomcatPath());
+				TabSheetUtil.getMainTabsheet().addTab(fileMgmtComponent,p.getTomcatId()).setClosable(true);
+				TabSheetUtil.getMainTabsheet().setSelectedTab(fileMgmtComponent);
+			});
+			return b;
+		}).setCaption("打开目录");
 	}
 
 	private void saveOrUpdateProject(boolean update) {

@@ -154,7 +154,7 @@ public class RemoteServerListComponent extends CommonComponent {
 		Button button = ComponentFactory.getStandardButton("确认");
 		button.addClickListener(e ->{
 			QueryWrapper<ConnectionInfo> queryWrapper = new QueryWrapper<ConnectionInfo>();
-			queryWrapper.eq("id_host", data.getIdHost()).eq("cd_port",data.getCdPort());
+			queryWrapper.eq("id_host", data.getIdHost()).eq("cd_port",data.getCdPort()).eq("id_user",data.getIdUser());
 			int delete = connectionInfoMapper.delete(queryWrapper);
 			if (delete >0) {
 				Notification.show("删除成功", Notification.Type.WARNING_MESSAGE);

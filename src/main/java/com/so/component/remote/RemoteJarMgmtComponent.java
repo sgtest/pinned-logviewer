@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.so.component.ComponentUtil;
 import com.so.component.util.*;
 import com.so.ui.LoginView;
 import com.so.util.Constants;
@@ -326,6 +327,22 @@ public class RemoteJarMgmtComponent extends CommonComponent {
 			upload.addSucceededListener(loader);
 			return upload;
 		}).setCaption("上传jar包/脚本");
+		grid.addComponentColumn(p ->{
+			Button b = ComponentFactory.getStandardButton("打开目录");
+			b.addClickListener(e -> {
+				RemoteFileMgmtComponent fileMgmtComponent = ComponentUtil.applicationContext.getBean(RemoteFileMgmtComponent.class);
+				fileMgmtComponent.setAddr(addr);
+				fileMgmtComponent.setHostName(addr.getIdHost());
+				fileMgmtComponent.setJschSession(jschSession);
+				fileMgmtComponent.initLayout();
+				fileMgmtComponent.initContent();
+				fileMgmtComponent.registerHandler();
+				fileMgmtComponent.jumpPath(p.getCdParentPath());
+				TabSheetUtil.getMainTabsheet().addTab(fileMgmtComponent,p.getIdProject()).setClosable(true);
+				TabSheetUtil.getMainTabsheet().setSelectedTab(fileMgmtComponent);
+			});
+			return b;
+		}).setCaption("打开目录");
 	}
 
 //	private void checkAddShell(ProjectList p) {
