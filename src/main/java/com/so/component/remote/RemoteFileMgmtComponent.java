@@ -64,6 +64,8 @@ public class RemoteFileMgmtComponent extends CommonComponent {
     private SSHClientUtil clientUtil;
     private Button createFileBtn;
     private Button uploadFileBtn;
+    private Button renameFileBtn;
+    private Button commandBtn;
 
     @Override
     public void initLayout() {
@@ -92,11 +94,15 @@ public class RemoteFileMgmtComponent extends CommonComponent {
         batchRemoveBtn = ComponentFactory.getButtonWithColor("批量删除", ColorEnum.RED);
         createDirBtn = ComponentFactory.getStandardButton("创建目录");
         createFileBtn = ComponentFactory.getStandardButton("创建文件");
+        renameFileBtn = ComponentFactory.getStandardButton("重命名");
+        commandBtn = ComponentFactory.getStandardButton("执行命令");
         uploadFileBtn = ComponentFactory.getStandardButton("上传文件");
         batchLayout.addComponent(batchMoveBtn);
         batchLayout.addComponent(batchRemoveBtn);
         batchLayout.addComponent(createDirBtn);
         batchLayout.addComponent(createFileBtn);
+        batchLayout.addComponent(renameFileBtn);
+        batchLayout.addComponent(commandBtn);
         batchLayout.addComponent(uploadFileBtn);
         batchLayout.setExpandRatio(batchMoveBtn, 1);
         horizontalLayout.addComponent(batchLayout);
@@ -496,6 +502,86 @@ public class RemoteFileMgmtComponent extends CommonComponent {
             });
             abs.addComponent(lay,"top:0px;left:20px;");
             abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+        renameFileBtn.addClickListener(c ->{
+            if (CollectionUtil.isEmpty(grid.getSelectedItems()) || grid.getSelectedItems().size() >1){
+                Notification.show("请选择要重命名的一个文件或目录！", Notification.Type.WARNING_MESSAGE);
+                return;
+            }
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("重命名文件"+pathLb.getValue(), "500px", "300px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("100px");
+            TextField usernameField = ComponentFactory.getStandardTtextField("新文件名：");
+            usernameField.setWidth("375px");
+            lay.addComponent(usernameField);
+            Button confirmBtn = ComponentFactory.getStandardButton("确定");
+            confirmBtn.addClickListener(e1 -> {
+                if (StrUtil.isNotEmpty(usernameField.getValue())) {
+                    try {
+                        String newName = usernameField.getValue().trim();
+                        String cmd;
+                        if (newName.startsWith("/")){
+                            Notification.show("文件或目录名不能带有斜杠/", Notification.Type.ERROR_MESSAGE);
+                            return;
+                        }else{//在当前目录下
+                            Set<RemoteFileInfo> selectedItems = grid.getSelectedItems();
+                            Optional<RemoteFileInfo> first = selectedItems.stream().findFirst();
+                            String currentPath = first.get().getCurrentPath();
+
+                            cmd = "cd "+pathLb.getValue()+";mv " + currentPath +" " + newName;
+                        }
+                        String s = clientUtil.executeCommand(cmd);
+                        System.out.println(s);
+                        log.warn(ComponentUtil.getCurrentUserName() +"重命名了文件："+cmd);
+                        initGridContent(pathLb.getValue());
+                    } catch (IOException ex) {
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                        log.error("重命名文件失败");
+                        Notification.show("重命名失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                    }
+                }
+                win.close();
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:120px;right:20px;");
+            UI.getCurrent().addWindow(win);
+        });
+        commandBtn.addClickListener(c ->{
+            AbsoluteLayout abs = ComponentFactory.getAbsoluteLayout();
+            CommonWindow win = new CommonWindow("在当前目录下执行命令："+pathLb.getValue(), "660px", "700px", abs);
+            abs.setHeightFull();
+            FormLayout lay = new FormLayout();
+            lay.setHeight("450px");
+            TextArea commandText = ComponentFactory.getTextArea("命令：");
+            TextArea resultText = ComponentFactory.getTextArea("结果：");
+            commandText.setWidth("560px");
+            commandText.setHeight("200px");
+            resultText.setWidth("560px");
+            lay.addComponent(commandText);
+            lay.addComponent(resultText);
+            Button confirmBtn = ComponentFactory.getStandardButton("执行");
+            confirmBtn.addClickListener(e1 -> {
+                if (StrUtil.isNotEmpty(commandText.getValue())) {
+                    try {
+                        String cmd = commandText.getValue().trim();
+                        String res = clientUtil.executeCommand("cd "+pathLb.getValue()+";"+cmd);
+                        resultText.setValue(res);
+                        System.out.println(res);
+                        log.warn(ComponentUtil.getCurrentUserName() +"执行了命令："+cmd);
+                        initGridContent(pathLb.getValue());
+                    } catch (IOException ex) {
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                        log.error("执行命令失败");
+                        resultText.setValue(ex.getMessage());
+                        Notification.show("执行命令失败"+ex.getMessage(), Notification.Type.ERROR_MESSAGE);
+                    }
+                }
+            });
+            abs.addComponent(lay,"top:0px;left:20px;");
+            abs.addComponent(confirmBtn, "top:600px;right:20px;");
             UI.getCurrent().addWindow(win);
         });
         uploadFileBtn.addClickListener(e ->{

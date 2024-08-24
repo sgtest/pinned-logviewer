@@ -209,7 +209,8 @@ public class RemoteServerListComponent extends CommonComponent {
 		bean.initLayout();
 		bean.initContent();
 		bean.registerHandler();
-		TabSheetUtil.getMainTabsheet().addTab(bean,"文件-"+data.getIdHost()).setClosable(true);
+		String[] split = data.getIdHost().split("\\.");
+		TabSheetUtil.getMainTabsheet().addTab(bean,"文件-"+split[split.length-1]+"-"+data.getIdUser()).setClosable(true);
 		TabSheetUtil.getMainTabsheet().setSelectedTab(bean);
 	}
 

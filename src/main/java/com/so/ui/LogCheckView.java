@@ -76,6 +76,7 @@ public class LogCheckView extends VerticalLayout implements View {
 		MenuItem remoteMgmt = menuBar.addItem("远程应用管理");
 //		MenuItem cornItem = menuBar.addItem("定时任务");
 		MenuItem dockerItem = menuBar.addItem("Docker管理");
+		MenuItem secureItem = menuBar.addItem("安全管理");
 		MenuItem toolItem = menuBar.addItem("其他工具");
 		MenuItem userItem = menuBar.addItem("用户管理");
 		//子菜单
